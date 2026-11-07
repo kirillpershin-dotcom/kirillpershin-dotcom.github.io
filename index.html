@@ -151,7 +151,8 @@ hr{border:0;border-top:1px solid var(--line);margin:16px 0}
 .modal>.card{max-height:92vh;overflow:auto}
 .form{display:grid;gap:10px;margin-top:12px}
 .form label{display:grid;gap:4px;font-size:13px;color:var(--ink2)}
-.form label.row{display:flex}
+.form label.row{display:flex;flex-wrap:nowrap;align-items:flex-start}
+.form label.row input{margin-top:3px;flex:none}
 .lbl{width:48px;font-size:13px;color:var(--muted)}
 .evstrip{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
 .evchip{border:0;background:var(--ev-soft);color:var(--ev);border-radius:999px;padding:3px 11px;font-size:13px}
@@ -293,7 +294,7 @@ table.grid tfoot td.time{border-top:1px solid var(--line);vertical-align:top;pad
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-08';
+const APP_VERSION = '2026-11-08.2';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -374,7 +375,16 @@ function persist(){
   try { localStorage.setItem(KEY, JSON.stringify(S)); storageOK = true; }
   catch(e){ storageOK = false; }
 }
-function save(){ S.updatedAt = Date.now(); persist(); renderBanner(); }
+function save(){ S.updatedAt = Date.now(); persist(); renderBanner(); clearTimeout(save._t); save._t = setTimeout(dailySnapshot, 2000); }
+/* автокопии: одна на каждый день работы, последние 14 дней, хранятся в этом же браузере */
+function dailySnapshots(){ try { return JSON.parse(localStorage.getItem(KEY+'-daily') || '[]'); } catch(e){ return []; } }
+function dailySnapshot(){
+  const day = ymd(today()); let arr = dailySnapshots().filter(x => x.day !== day);
+  arr.unshift({day, at: Date.now(), data: S});
+  for (let keep = 14; keep >= 2; keep -= 3){
+    try { localStorage.setItem(KEY+'-daily', JSON.stringify(arr.slice(0, keep))); return; } catch(e){}
+  }
+}
 function snapshot(label){ try{ localStorage.setItem(KEY+'-undo', JSON.stringify({label, at:Date.now(), data:S})); }catch(e){} }
 window.addEventListener('storage', e => { if (e.key===KEY && e.newValue){ S = JSON.parse(e.newValue); S.settings = Object.assign({}, DEFAULTS, S.settings||{}); if (!Array.isArray(S.events)) S.events = []; dirty(); render(); } });
 
@@ -579,10 +589,19 @@ function renderBanner(){
     bindInstall(el);
     return;
   }
-  if (!Object.keys(S.weeks).length && !evList().length){
-    el.innerHTML = `<div class="banner no-print"><span>Расписание пустое. Если у вас есть файл-копия (.html или .json), откройте её — всё восстановится.</span><button class="btn" id="bnOpen">Открыть копию</button><input type="file" id="bnFile" accept=".html,.htm,.json,text/html,application/json" style="display:none"></div>`;
+  let seedOk = false; try { seedOk = !!localStorage.getItem(KEY+'-seed-ok'); } catch(e){}
+  if (!S.updatedAt && !S.savedAt && Object.keys(S.weeks).length && !seedOk){
+    el.innerHTML = `<div class="banner no-print"><span><b>Это свежая копия приложения</b> — в ней расписание из исходной таблицы Numbers. Если вы уже вносили изменения в другой копии или на сайте, загрузите свою последнюю копию.</span>
+      <button class="btn" id="bnOpen">Загрузить копию</button><button class="btn ghost" id="bnOk">Это мои данные</button><input type="file" id="bnFile" accept=".xlsx,.csv,.html,.htm,.json,text/html,application/json" style="display:none"></div>`;
     $('#bnOpen').onclick = () => $('#bnFile').click();
-    $('#bnFile').onchange = e => importFile(e.target.files[0]);
+    $('#bnFile').onchange = e => openAnyFile(e.target.files[0]);
+    $('#bnOk').onclick = () => { try { localStorage.setItem(KEY+'-seed-ok','1'); } catch(e){} renderBanner(); };
+    return;
+  }
+  if (!Object.keys(S.weeks).length && !evList().length){
+    el.innerHTML = `<div class="banner no-print"><span>Расписание пустое. Загрузите файл-копию или таблицу Excel.</span><button class="btn" id="bnOpen">Загрузить файл</button><input type="file" id="bnFile" accept=".xlsx,.csv,.html,.htm,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/html,application/json" style="display:none"></div>`;
+    $('#bnOpen').onclick = () => $('#bnFile').click();
+    $('#bnFile').onchange = e => openAnyFile(e.target.files[0]);
     return;
   }
   if (!storageOK) msg = 'Браузер не даёт сохранять данные. Выгрузите копию, чтобы ничего не потерять.';
@@ -1061,6 +1080,16 @@ function renderData(){
   $('#main').innerHTML = `
   <h1 style="margin-top:18px">Данные</h1>
   <section class="card">
+    <h3>Загрузить расписание</h3>
+    <div class="row"><label class="btn pri" style="cursor:pointer">Выбрать файл…<input type="file" id="iFile" accept=".xlsx,.csv,.html,.htm,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/html,application/json" style="display:none"></label>
+      <span class="small muted">Excel (.xlsx), CSV или файл-копия</span></div>
+    <div class="hint">Из Excel подойдёт сетка «время × дни» (как ваша таблица), список с колонками «Дата, Время, Ребёнок» или выгрузка из этого приложения. Перед загрузкой я покажу, что нашлось, и спрошу, как добавить. Таблицу Numbers сначала сохраните в Excel: Файл → Экспортировать → Excel. Файл-копия (.html или .json) восстанавливает всё целиком.${isTouch()?' Файл из Telegram: откройте его в чате → «Поделиться» → «Сохранить в Файлы», затем выберите здесь.':''}</div>
+    ${undo?`<hr><div class="row"><span class="small">Можно отменить: «${esc(undo.label)}» (${new Date(undo.at).toLocaleString('ru-RU')})</span><button class="btn" id="iUndo">Отменить</button></div>`:''}
+  </section>
+  ${(() => { const ds = dailySnapshots(); return ds.length ? `<section class="card"><h3>Автокопии в этом браузере</h3>
+    <div class="small muted">Приложение само сохраняет состояние за каждый день работы (последние 14 дней).</div>
+    <table class="t" style="margin-top:6px"><tbody>${ds.map((x,i)=>`<tr><td>${fmtDT(x.at)}</td><td class="muted">${Object.keys(x.data.weeks||{}).length} недель</td><td class="n">${i===0?'<span class="muted small">сегодня</span>':`<button class="btn ghost" data-snap="${i}">Вернуть</button>`}</td></tr>`).join('')}</tbody></table></section>` : ''; })()}
+  <section class="card">
     <h3>Копия: приложение + все данные</h3>
     <div class="row"><button class="btn pri" id="eApp">${isTouch()?'Сохранить / отправить копию':'Сохранить копию (.html)'}</button><span class="small muted">${st.lastExport?'последняя: '+fmtDT(st.lastExport):'ещё не сохранялась'}</span></div>
     <div class="hint">Это один файл: в нём само приложение и всё расписание, учёт и события. Его можно открыть на любом компьютере или телефоне без интернета, всё будет на месте. Держите копии в двух местах, например в Telegram «Избранное» и в облаке или на флешке.</div>
@@ -1075,12 +1104,6 @@ function renderData(){
   <section class="card" id="instCard">
     <h3>Телефон</h3>
     ${installSteps()}
-  </section>
-  <section class="card">
-    <h3>Открыть копию</h3>
-    <div class="row"><input type="file" id="iFile" accept=".html,.htm,.json,text/html,application/json"></div>
-    <div class="hint">Подходит файл-копия .html или .json. Текущие данные заменятся, но их можно будет вернуть кнопкой «Отменить».${isTouch()?' Файл из Telegram: откройте его в чате → «Поделиться» → «Сохранить в Файлы», затем выберите здесь.':''}</div>
-    ${undo?`<hr><div class="row"><span class="small">Можно отменить: «${esc(undo.label)}» (${new Date(undo.at).toLocaleString('ru-RU')})</span><button class="btn" id="iUndo">Отменить</button></div>`:''}
   </section>
   <section class="card">
     <h3>Шаблон расчёта для новых недель</h3>
@@ -1116,9 +1139,11 @@ function renderData(){
   $('#eJson').onclick = exportJSON;
   $('#eApp').onclick = exportApp;
   bindInstall($('#instCard'));
+  $$('[data-snap]').forEach(b => b.onclick = () => { const x = dailySnapshots()[+b.dataset.snap]; if (!x || !confirm('Вернуть расписание к состоянию на '+fmtDT(x.at)+'? Текущее состояние можно будет вернуть кнопкой «Отменить».')) return;
+    snapshot('Возврат к автокопии'); S = x.data; S.settings = Object.assign({}, DEFAULTS, S.settings||{}); if (!Array.isArray(S.events)) S.events = []; migrate(); dirty(); save(); renderData(); toast('Готово', {label:'Отменить', fn: undoLast}); });
   $('#eXlsx').onclick = exportXLSX;
   $('#eCsv').onclick = exportCSV;
-  $('#iFile').onchange = e => importFile(e.target.files[0]);
+  $('#iFile').onchange = e => openAnyFile(e.target.files[0]);
   if ($('#iUndo')) $('#iUndo').onclick = () => { if (!confirm('Вернуть данные к состоянию до «'+undo.label+'»?')) return; S = undo.data; S.settings = Object.assign({}, DEFAULTS, S.settings||{}); if (!Array.isArray(S.events)) S.events = []; localStorage.removeItem(KEY+'-undo'); dirty(); save(); renderData(); toast('Отменено'); };
   $$('#tpl input').forEach(inp => inp.oninput = () => { st.template[+inp.dataset.i][inp.dataset.k] = inp.value; save(); });
   $$('#tpl [data-del]').forEach(b => b.onclick = () => { st.template.splice(+b.dataset.del,1); save(); renderData(); });
@@ -1540,6 +1565,307 @@ function openDayInfo(ds){
   $('[data-add]', el).onclick = () => { m.close(); openEvent({from: ds}); };
   const sd = $('[data-send]', el); if (sd) sd.onclick = () => { m.close(); openSend({mode:'day', week:key, day:i}); };
   const op = $('[data-open]', el); if (op) op.onclick = () => { m.close(); go('week', {week:key, day:i}); };
+}
+
+
+/* ============ IMPORT: Excel / CSV ============ */
+function openAnyFile(file){
+  if (!file) return;
+  const n = file.name.toLowerCase();
+  if (/\.(html?|json)$/.test(n)) return importFile(file);
+  if (/\.numbers$/.test(n)) return alert('Файл Numbers сначала сохраните в Excel: в Numbers выберите Файл → Экспортировать → Excel, затем загрузите получившийся .xlsx.');
+  if (/\.xls$/.test(n)) return alert('Это старый формат Excel (.xls). Откройте файл в Excel или Numbers и сохраните как .xlsx.');
+  importSpreadsheet(file).catch(e => alert('Не получилось прочитать таблицу: ' + e.message));
+}
+async function unzipEntries(buf){
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), out = {}, dec = new TextDecoder();
+  let e = -1; for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50){ e = i; break; }
+  if (e < 0) throw new Error('это не файл Excel (.xlsx)');
+  const n = dv.getUint16(e + 10, true); let p = dv.getUint32(e + 16, true);
+  for (let k = 0; k < n; k++){
+    if (dv.getUint32(p, true) !== 0x02014b50) break;
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    const name = dec.decode(u8.subarray(p + 46, p + 46 + nl));
+    p += 46 + nl + xl + cl;
+    const start = off + 30 + dv.getUint16(off + 26, true) + dv.getUint16(off + 28, true);
+    out[name] = {method, data: u8.subarray(start, start + csize)};
+  }
+  return out;
+}
+async function unzipText(entry){
+  if (!entry) return null;
+  if (entry.method === 0) return new TextDecoder().decode(entry.data);
+  if (entry.method !== 8) throw new Error('неизвестный способ сжатия');
+  if (typeof DecompressionStream === 'undefined') throw new Error('браузер слишком старый для чтения Excel — обновите его');
+  return await new Response(new Blob([entry.data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+}
+function isDateFmt(id, code){
+  if ([14,15,16,17,18,19,20,21,22,45,46,47].includes(id)) return true;
+  if (!code) return false;
+  const c = code.replace(/"[^"]*"/g, '').replace(/\[[^\]]*\]/g, '').replace(/\\./g, '');
+  return /[dmyhsдмгч]/i.test(c) && !/^general$/i.test(c.trim());
+}
+async function readXlsx(buf){
+  const z = await unzipEntries(buf);
+  const get = n => unzipText(z[n]);
+  const xml = t => new DOMParser().parseFromString(t, 'application/xml');
+  const tags = (node, name) => [...node.getElementsByTagNameNS('*', name)];
+  const wbTxt = await get('xl/workbook.xml'); if (!wbTxt) throw new Error('в файле нет листов Excel');
+  const wb = xml(wbTxt);
+  const d1904 = tags(wb, 'workbookPr').some(x => /^(1|true)$/i.test(x.getAttribute('date1904') || ''));
+  const relMap = {}; const relTxt = await get('xl/_rels/workbook.xml.rels');
+  if (relTxt) tags(xml(relTxt), 'Relationship').forEach(r => relMap[r.getAttribute('Id')] = r.getAttribute('Target'));
+  const ss = []; const sst = await get('xl/sharedStrings.xml');
+  if (sst) tags(xml(sst), 'si').forEach(si => ss.push(tags(si, 't').filter(t => !t.closest || !t.parentNode || t.parentNode.localName !== 'rPh').map(t => t.textContent).join('')));
+  const dateXf = []; const stTxt = await get('xl/styles.xml');
+  if (stTxt){
+    const sd = xml(stTxt), custom = {};
+    tags(sd, 'numFmt').forEach(f => custom[f.getAttribute('numFmtId')] = f.getAttribute('formatCode'));
+    const xfs = tags(sd, 'cellXfs')[0];
+    if (xfs) [...xfs.children].forEach((xf, i) => { const id = +xf.getAttribute('numFmtId'); dateXf[i] = isDateFmt(id, custom[id]); });
+  }
+  const colIdx = L => { let n = 0; for (const ch of L) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  const sheets = [];
+  for (const sh of tags(wb, 'sheet')){
+    const rid = [...sh.attributes].find(a => a.localName === 'id' && a.prefix)?.value;
+    let target = relMap[rid]; if (!target) continue;
+    target = target.replace(/^\/?xl\//, '').replace(/^\//, ''); target = 'xl/' + target;
+    const sx = await get(target); if (!sx) continue;
+    const rows = [];
+    tags(xml(sx), 'row').forEach((rowEl, ri) => {
+      const r = (+rowEl.getAttribute('r') || ri + 1) - 1; let ci = -1;
+      [...rowEl.children].filter(c => c.localName === 'c').forEach(c => {
+        const ref = c.getAttribute('r'); ci = ref ? colIdx(ref.replace(/\d+/g, '')) : ci + 1;
+        const t = c.getAttribute('t'), st = +(c.getAttribute('s') || 0);
+        const v = tags(c, 'v')[0]?.textContent;
+        let cell = null;
+        if (t === 's') cell = {s: ss[+v] ?? ''};
+        else if (t === 'inlineStr') cell = {s: tags(c, 't').map(x => x.textContent).join('')};
+        else if (t === 'str' || t === 'e') cell = {s: v ?? ''};
+        else if (t === 'b') cell = {n: +v};
+        else if (v != null && v !== '') { cell = {n: +v}; if (dateXf[st]) cell.date = true; }
+        if (!cell) return;
+        if (tags(c, 'f').length) cell.f = true;
+        (rows[r] || (rows[r] = []))[ci] = cell;
+      });
+    });
+    sheets.push({name: sh.getAttribute('name') || 'Лист', rows, d1904});
+  }
+  return sheets;
+}
+function parseCSV(text){
+  text = text.replace(/^﻿/, '');
+  const first = text.split(/\r?\n/)[0] || '';
+  const dl = (first.match(/;/g) || []).length >= (first.match(/,/g) || []).length ? ';' : (first.includes('\t') ? '\t' : ',');
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){ if (ch === '"'){ if (text[i+1] === '"'){ cur += '"'; i++; } else q = false; } else cur += ch; continue; }
+    if (ch === '"') q = true;
+    else if (ch === dl){ row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r'){ if (ch === '\r' && text[i+1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if (cur || row.length){ row.push(cur); rows.push(row); }
+  return rows.map(r => r.map(v => v.trim() === '' ? undefined : {s: v.trim()}));
+}
+const XL0 = Date.UTC(1899, 11, 30);
+function xlDate(c, d1904){
+  if (!c) return null;
+  if (c.n != null && c.date && c.n >= 1){ const d = new Date(XL0 + (c.n + (d1904 ? 1462 : 0)) * 864e5); return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()); }
+  if (c.s){
+    let m = c.s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+    m = c.s.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/); if (m){ let y = +m[3]; if (y < 100) y += 2000; return new Date(y, +m[2]-1, +m[1]); }
+  }
+  return null;
+}
+function xlTime(c){
+  if (!c) return null;
+  if (c.s != null){ const m = String(c.s).trim().match(/^(\d{1,2})[:.](\d{2})$/); return m && +m[1] < 24 ? pad(+m[1]) + ':' + m[2] : null; }
+  if (c.n != null && c.date){ const fr = c.n - Math.floor(c.n); if (fr > 0.0001){ const mins = Math.round(fr * 1440), h = Math.floor(mins / 60); if (h >= 6 && h <= 23) return pad(h) + ':' + pad(mins % 60); } }
+  return null;
+}
+const xlText = c => c && c.s != null && String(c.s).trim() ? String(c.s).replace(/\s+/g, ' ').trim() : null;
+function dayHead(c, d1904){
+  if (!c) return null;
+  const d = xlDate(c, d1904);
+  if (d && !(c.n != null && c.n - Math.floor(c.n) > 0.0001)) return {date: d};
+  if (c.n != null && !c.date && !c.f && Number.isInteger(c.n) && c.n >= 1 && c.n <= 31) return {num: c.n};
+  if (c.s){ const m = String(c.s).trim().match(/^(?:[А-Яа-яA-Za-z]{2,3}\.?\s*)?(\d{1,2})$/); if (m && +m[1] >= 1 && +m[1] <= 31) return {num: +m[1]}; }
+  return null;
+}
+function snapMonday(votes){
+  const cnt = {}; votes.forEach(d => { const k = ymd(d); cnt[k] = (cnt[k] || 0) + 1; });
+  const mode = pdate(Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0]);
+  const wd = (mode.getDay() + 6) % 7;
+  const snapped = wd <= 3 ? addDays(mode, -wd) : addDays(mode, 7 - wd);
+  return {snapped, err: votes.reduce((a, d) => a + Math.abs(Math.round((d - snapped) / 864e5)), 0)};
+}
+function blockMonday(heads, label, center){
+  const dates = heads.map((h, i) => h.date ? addDays(h.date, -i) : null).filter(Boolean);
+  if (dates.length >= 2) return snapMonday(dates).snapped;
+  const nums = heads.map(h => h.num);
+  const ref = label || center || today(), ctr = center || ref;
+  const cands = [];
+  for (let dm = -14; dm <= 14; dm++){
+    const base = new Date(ref.getFullYear(), ref.getMonth() + dm, 1);
+    let y = base.getFullYear(), m = base.getMonth(), prev = null; const votes = [];
+    nums.forEach((n, i) => {
+      if (n == null) return;
+      if (prev != null && n < prev){ m++; if (m > 11){ m = 0; y++; } }
+      prev = n;
+      const d = new Date(y, m, n); if (d.getDate() !== n) return;
+      votes.push(addDays(d, -i));
+    });
+    if (!votes.length) continue;
+    const r = snapMonday(votes);
+    const lm = ref.getMonth(), md = Math.min(Math.abs(base.getMonth() - lm), 12 - Math.abs(base.getMonth() - lm));
+    // ошибка в днях недели важнее всего; затем близость к остальным неделям таблицы (год), затем к подписи месяца
+    cands.push({d: r.snapped, score: r.err * 1000 + (label ? md * 5 : 0) + Math.abs(r.snapped - ctr) / 864e5 / 30});
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.score - b.score);
+  return cands[0].d;
+}
+function gridBlocks(sheet){
+  const R = sheet.rows, out = [];
+  for (let r = 0; r < R.length; r++){
+    const row = R[r]; if (!row) continue;
+    for (let c = 0; c < row.length; c++){
+      if (!xlTime((R[r+1] || [])[c])) continue;
+      if (xlTime((R[r+1] || [])[c+1]) || xlTime((R[r+2] || [])[c+1])) continue; // соседняя колонка тоже время — это не сетка дней
+      const heads = [];
+      for (let k = 1; k <= 7; k++){
+        const h = dayHead(row[c+k], sheet.d1904); if (!h) break;
+        if (k > 5){ const p = heads[k-2];
+          const ok = h.date && p.date ? (h.date - p.date) / 864e5 === 1 : (h.num != null && p.num != null && (h.num === p.num + 1 || (p.num >= 28 && h.num === 1)));
+          if (!ok) break; }
+        heads.push(h);
+      }
+      if (heads.length < 4) continue;
+      if (heads.some(h => h.date) && heads.some(h => h.num != null)) continue; // смесь дат и чисел — не заголовок недели
+      const slots = []; let rr = r + 1;
+      while (rr < R.length && xlTime((R[rr] || [])[c])){ slots.push(rr); rr++; }
+      out.push({r, c, heads, slots, end: rr, label: (() => { const d = xlDate(row[c], sheet.d1904); return d && !(row[c].s && /:/.test(row[c].s)) ? d : null; })()});
+    }
+  }
+  // подпись месяца берём у ближайшего блока выше в той же колонке, если выше нет — у ближайшего ниже
+  out.forEach(b => { if (!b.label){ const same = out.filter(x => x.c === b.c && x.label);
+    const above = same.filter(x => x.r < b.r).sort((x, y) => y.r - x.r)[0], below = same.filter(x => x.r > b.r).sort((x, y) => x.r - y.r)[0];
+    const near = above || below; if (near) b.inherited = near.label; } });
+  const labels = out.map(b => b.label).filter(Boolean).sort((a, b) => a - b);
+  out.center = labels.length ? labels[Math.floor(labels.length / 2)] : null;
+  return out;
+}
+function findHeader(sheet, tests){
+  for (let r = 0; r < Math.min(sheet.rows.length, 15); r++){
+    const row = sheet.rows[r] || []; const idx = {};
+    row.forEach((c, i) => { const t = (xlText(c) || '').toLowerCase().replace(/ё/g, 'е'); if (!t) return;
+      for (const [k, re] of Object.entries(tests)) if (idx[k] == null && re.test(t)) idx[k] = i; });
+    if (Object.keys(tests).every(k => k.endsWith('?') || idx[k] != null)) return {r, idx};
+  }
+  return null;
+}
+async function importSpreadsheet(file){
+  const sheets = /\.csv$/i.test(file.name) ? [{name: file.name, rows: parseCSV(await file.text())}] : await readXlsx(await file.arrayBuffer());
+  const res = {weeks: {}, notes: {}, calc: {}, n: {}, events: [], sunday: 0, from: [], conflicts: 0};
+  const put = (date, t, txt) => {
+    const i = (date.getDay() + 6) % 7; if (i === 6){ res.sunday++; return; }
+    const key = ymd(mondayOf(date)), w = res.weeks[key] || (res.weeks[key] = {});
+    const day = w[i] || (w[i] = {});
+    if (day[t] && day[t] !== txt){ day[t] += ' / ' + txt; res.conflicts++; } else day[t] = txt;
+  };
+  let tableCount = 0;
+  for (const sh of sheets){
+    const h = findHeader(sh, {date: /^(дата|date|день и дата|число)$/, time: /^(время|time|начало занятия)$/, name: /^(запись|ребенок|ребёнок|имя|кто|пациент|name|фио)$/});
+    if (h){
+      let k = 0;
+      for (let r = h.r + 1; r < sh.rows.length; r++){
+        const row = sh.rows[r] || []; const d = xlDate(row[h.idx.date], sh.d1904), t = xlTime(row[h.idx.time]), x = xlText(row[h.idx.name]);
+        if (d && t && x){ put(d, t, x); k++; }
+      }
+      if (k){ tableCount += k; res.from.push(`лист «${sh.name}»: список, ${k} записей`); }
+    }
+    const he = findHeader(sh, {from: /^(с|дата|начало)$/, title: /^(событие|название)$/, 'to?': /^(по|конец)$/, 'time?': /^время$/, 'off?': /^приема нет$/, 'note?': /^заметка$/});
+    if (he && /событ/i.test(sh.name + ' ' + (xlText((sh.rows[he.r] || [])[he.idx.title]) || ''))){
+      for (let r = he.r + 1; r < sh.rows.length; r++){
+        const row = sh.rows[r] || []; const f = xlDate(row[he.idx.from], sh.d1904), ti = xlText(row[he.idx.title]); if (!f || !ti) continue;
+        const to = he.idx['to?'] != null ? xlDate(row[he.idx['to?']], sh.d1904) : null;
+        const e = {id: 'e' + Math.random().toString(36).slice(2, 9), title: ti, from: ymd(f)};
+        if (to && ymd(to) !== e.from) e.to = ymd(to);
+        const tm = he.idx['time?'] != null ? (xlTime(row[he.idx['time?']]) || xlText(row[he.idx['time?']])) : null; if (tm) e.time = tm;
+        if (he.idx['off?'] != null && /да|yes|1|true/i.test(xlText(row[he.idx['off?']]) || String(row[he.idx['off?']]?.n || ''))) e.off = true;
+        const nt = he.idx['note?'] != null ? xlText(row[he.idx['note?']]) : null; if (nt) e.note = nt;
+        res.events.push(e);
+      }
+    }
+    const hc = findHeader(sh, {start: /^начало$/, letter: /^строка$/, name: /^название$/, f: /^формула$/, 'n?': /^n$/});
+    if (hc){
+      for (let r = hc.r + 1; r < sh.rows.length; r++){
+        const row = sh.rows[r] || []; const d = xlDate(row[hc.idx.start], sh.d1904), f = xlText(row[hc.idx.f]); if (!d || !f) continue;
+        const key = ymd(mondayOf(d)); (res.calc[key] || (res.calc[key] = [])).push({name: xlText(row[hc.idx.name]) || '', f});
+        const nc = hc.idx['n?'] != null ? row[hc.idx['n?']] : null; if (nc && nc.n != null && res.n[key] == null) res.n[key] = nc.n;
+      }
+    }
+  }
+  let gridCount = 0;
+  for (const sh of sheets){
+    const blocks = gridBlocks(sh);
+    for (const b of blocks){
+      const mon = blockMonday(b.heads, b.label || b.inherited, blocks.center); if (!mon) continue;
+      const key = ymd(mon);
+      for (let rr = b.end; rr <= b.end + 2; rr++){
+        const row = sh.rows[rr] || []; if (/^заметки$/i.test(xlText(row[b.c]) || '')){ const t = xlText(row[b.c+1]); if (t) res.notes[key] = t.split(' · ').join('\n'); }
+      }
+      if (tableCount) continue;
+      b.slots.forEach(rr => { const t = xlTime(sh.rows[rr][b.c]); b.heads.forEach((h, i) => { const x = xlText(sh.rows[rr][b.c+1+i]); if (x){ put(addDays(mon, i), t, x); gridCount++; } }); });
+    }
+    if (!tableCount && gridCount) res.from.push(`лист «${sh.name}»: сетка`);
+  }
+  if (!tableCount && !gridCount && !res.events.length) throw new Error('не нашёл расписания. Нужна сетка «время × дни» (слева время 09:00, 10:00…, сверху дни или даты) или список с колонками «Дата», «Время», «Ребёнок».');
+  showImportDialog(res, file.name);
+}
+function showImportDialog(res, fname){
+  const keys = Object.keys(res.weeks).sort();
+  const total = keys.reduce((a, k) => a + Object.values(res.weeks[k]).reduce((b, d) => b + Object.keys(d).length, 0), 0);
+  const busy = keys.filter(k => S.weeks[k] && entries(S.weeks[k]).length).length;
+  const m = modal(`${mhead('Загрузка из таблицы')}
+    <div class="small muted" style="margin-top:4px">${esc(fname)}</div>
+    <div style="margin-top:12px;line-height:1.6">
+      Найдено: <b>${total}</b> ${plural(total,'занятие','занятия','занятий')} в <b>${keys.length}</b> ${plural(keys.length,'неделе','неделях','неделях')}${keys.length?` (${weekTitle(keys[0])} — ${weekTitle(keys[keys.length-1])})`:''}.
+      ${res.events.length ? `<br>Событий: <b>${res.events.length}</b>.` : ''}${Object.keys(res.calc).length ? `<br>Расчёт по формулам: <b>${Object.keys(res.calc).length}</b> ${plural(Object.keys(res.calc).length,'неделя','недели','недель')}.` : ''}
+      ${res.sunday ? `<br><span class="flag">Пропущено записей в воскресенье: ${res.sunday}.</span>` : ''}
+      ${res.conflicts ? `<br><span class="flag">В ${res.conflicts} ячейках было по две записи на одно время — объединил через «/».</span>` : ''}
+      <div class="small muted">${res.from.map(esc).join(' · ')}</div>
+    </div>
+    <div class="form">
+      <label class="row" style="gap:8px;color:var(--ink)"><input type="radio" name="imode" value="weeks" checked> Заменить эти недели данными из файла${busy?` <span class="muted">(сейчас заполнено ${busy})</span>`:''}, остальные не трогать</label>
+      <label class="row" style="gap:8px;color:var(--ink)"><input type="radio" name="imode" value="empty"> Добавить только в пустые ячейки</label>
+      <label class="row" style="gap:8px;color:var(--ink)"><input type="radio" name="imode" value="all"> Заменить всё расписание файлом</label>
+    </div>
+    <div class="hint">Перед загрузкой сохраню текущее состояние — его можно вернуть кнопкой «Отменить».</div>
+    <div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn" data-x>Отмена</button><button class="btn pri" id="impGo">Загрузить</button></div>`, 560);
+  $('#impGo', m.el).onclick = () => {
+    const mode = $('input[name="imode"]:checked', m.el).value;
+    snapshot('Загрузка из таблицы');
+    if (mode === 'all'){ S.weeks = {}; if (res.events.length) S.events = []; }
+    let n = 0;
+    for (const key of keys){
+      const w = ensureWeek(key), src = res.weeks[key];
+      if (mode !== 'empty') w.d = {};
+      for (const i in src) for (const t in src[i]){ const day = w.d[i] || (w.d[i] = {}); if (mode === 'empty' && day[t]) continue; day[t] = src[i][t]; n++; }
+      if (res.calc[key] && (mode !== 'empty' || !w.calcEdited)){ w.calc = res.calc[key]; w.calcEdited = true; }
+      if (res.n[key] != null && res.n[key] !== weekdayCount(w)) { w.n = res.n[key]; w.nNote = 'Число N из загруженной таблицы'; } else if (mode !== 'empty') { delete w.n; delete w.nNote; }
+      if (res.notes[key] && (mode !== 'empty' || !w.notes)) w.notes = res.notes[key];
+      if (entries(w).some(e => e.i === 5) && !w.calc.some(l => { try { return tokenize(l.f).some(x => x.v === 'SB'); } catch(e){ return false; } })) w.calc.push({name:'Суббота', f: S.settings.satRate + '*СБ'});
+      tidyWeek(key);
+    }
+    for (const e of res.events) if (!evList().some(x => x.from === e.from && x.title === e.title)) evList().push(e);
+    dirty(); save(); m.close();
+    const tk = ymd(mondayOf(today())); const goKey = keys.includes(tk) ? tk : keys[keys.length - 1];
+    if (goKey) go('week', {week: goKey, day: null}); else render();
+    toast(`Загружено записей: ${n}`, {label: 'Отменить', fn: undoLast});
+  };
 }
 
 /* ============ start ============ */
