@@ -261,6 +261,14 @@ table.grid tfoot td.time{border-top:1px solid var(--line);vertical-align:top;pad
 .steps{margin:8px 0 0;padding-left:20px;font-size:14px}
 .steps li{margin:5px 0}
 .ic{width:18px;height:18px;vertical-align:-3px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.yd .c{flex-direction:column;line-height:1;gap:1px}
+.yd .c .yn{font-size:10px}
+.yd .c.has .yn{font-size:8px;opacity:.8}
+.yd .c .yc{font-size:11.5px;font-weight:700}
+.ym{scroll-margin-top:70px}
+.ym.cur{box-shadow:0 0 0 2px var(--accent)}
+.card.dacc .ln{font-size:14px}
+@media (max-width:760px){.ym{scroll-margin-top:12px}}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
 </style>
 </head>
@@ -285,6 +293,7 @@ table.grid tfoot td.time{border-top:1px solid var(--line);vertical-align:top;pad
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+const APP_VERSION = '2026-11-08';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1101,7 +1110,7 @@ function renderData(){
   <section class="card">
     <h3>Данные внутри этого файла</h3>
     <div class="small muted">${SEED.savedAt ? 'Файл сохранён '+fmtDT(SEED.savedAt)+': '+Object.keys(SEED.weeks||{}).length+' недель.' : Object.keys(SEED.weeks||{}).length ? 'Исходный перенос из Numbers: '+Object.keys(SEED.weeks).length+' недель.' : 'В этом файле нет сохранённых данных.'}</div>
-    <div class="row" style="margin-top:8px"><button class="btn ghost" id="iReset">Вернуть данные из файла</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" id="iReset">Вернуть данные из файла</button><span class="sp"></span><span class="small muted">Версия приложения ${APP_VERSION}</span></div>
   </section>`;
   $('#nmGo').onclick = () => { const k = index().get($('#nmFrom').value); if (k) renameKid(k, $('#nmTo').value); };
   $('#eJson').onclick = exportJSON;
@@ -1410,6 +1419,7 @@ function dayEntries(d){
 }
 function renderCal(){
   const t = today();
+  if (V.cal !== 'year') V.yearScroll = null;
   if (!V.calMonth) V.calMonth = monthKey(t);
   if (!V.calYear) V.calYear = t.getFullYear();
   if (V.cal==='year') renderYear(); else renderMonth();
@@ -1424,7 +1434,7 @@ function calHead(title, extra=''){
 function bindCalHead(prev, next, addDate){
   $('#cPrevP').onclick = prev; $('#cNextP').onclick = next;
   $('#cToday').onclick = () => { V.calMonth = monthKey(today()); V.calYear = today().getFullYear(); renderCal(); };
-  $$('#cView button').forEach(b => b.onclick = () => { V.cal = b.dataset.c; if (V.cal==='year') V.calYear = +V.calMonth.slice(0,4); renderCal(); });
+  $$('#cView button').forEach(b => b.onclick = () => { V.cal = b.dataset.c; V.yearScroll = null; if (V.cal==='year') V.calYear = +V.calMonth.slice(0,4); renderCal(); });
   $('#cAddEv').onclick = () => openEvent({from: addDate});
 }
 function renderMonth(){
@@ -1442,7 +1452,7 @@ function renderMonth(){
       wsum += n;
       const list = n ? dayEntries(d) : [];
       html += `<div class="mc ${d.getMonth()!==mo-1?'out':''} ${ds===tds?'today':''} ${i>=5?'wkend':''} ${off?'hatch':''}" data-ds="${ds}">
-        <div class="mh"><span class="dn">${d.getDate()}</span>${n?`<span class="mn">${n}<span class="zan"> зан.</span></span>`:''}<button class="add" data-add="${ds}" title="Добавить событие">+</button></div>
+        <div class="mh"><span class="dn">${d.getDate()}</span>${n?`<span class="mn">${n}<span class="zan"> ${plural(n,'ребёнок','ребёнка','детей')}</span></span>`:''}<button class="add" data-add="${ds}" title="Добавить событие">+</button></div>
         ${evs.map(e=>`<div class="ev ${e.off?'off':''}" data-ev="${e.id}" title="${esc(evLine(e))}">${esc((e.time?e.time+' ':'')+e.title)}</div>`).join('')}
         ${V.calNames && list.length ? `<div class="ml">${list.map(x=>`<div><span>${x.t.slice(0,2)}</span> ${esc(x.txt)}</div>`).join('')}</div>` : ''}
       </div>`;
@@ -1466,7 +1476,7 @@ function bindCalClicks(){
     const wk = e.target.closest('[data-wk]'); if (wk) return go('week', {week: wk.dataset.wk, day: null});
     const mt = e.target.closest('[data-month]'); if (mt){ V.cal='month'; V.calMonth = mt.dataset.month; return renderCal(); }
     const c = e.target.closest('[data-ds]');
-    if (c){ const d = pdate(c.dataset.ds), i = (d.getDay()+6)%7; go('week', {week: ymd(mondayOf(d)), day: i < S.settings.days ? i : 0}); }
+    if (c) openDayInfo(c.dataset.ds);
   };
 }
 function renderYear(){
@@ -1479,15 +1489,15 @@ function renderYear(){
     for (let d = new Date(first); d <= last; d = addDays(d,1)){
       const ds = ymd(d), n = cnt.get(ds) || 0, evs = eventsOn(ds), off = evs.some(e=>e.off);
       ms += n;
-      cells += `<div class="c ${off?'off hatch':q(n)} ${evs.length?'hasev':''} ${ds===tds?'td':''}" data-ds="${ds}">${d.getDate()}</div>`;
+      cells += `<div class="c ${off?'off hatch':q(n)} ${evs.length?'hasev':''} ${ds===tds?'td':''} ${n?'has':''}" data-ds="${ds}"><span class="yn">${d.getDate()}</span>${n?`<span class="yc">${n}</span>`:''}</div>`;
     }
     total += ms;
     const ne = eventsBetween(ymd(first), ymd(last)).length;
-    months += `<div class="card ym"><h3 data-month="${monthKey(first)}">${MN[mo]} <small>${ms?ms+' зан.':''}${ne?' · событий '+ne:''}</small></h3><div class="yd">${cells}</div></div>`;
+    months += `<div class="card ym ${monthKey(first)===monthKey(today())?'cur':''}" id="ym-${mo}"><h3 data-month="${monthKey(first)}">${MN[mo]} <small>${ms?ms+' зан.':''}${ne?' · событий '+ne:''}</small></h3><div class="yd">${cells}</div></div>`;
   }
   const evYear = eventsBetween(y+'-01-01', y+'-12-31');
   $('#main').innerHTML = calHead(String(y), `<span class="pill kpi">занятий ${total}</span>`) + `
-    <div class="legend" style="margin-top:12px"><span>Занятий в день:</span><span><i class="q1" style="background:var(--q1)"></i>1–4</span><span><i style="background:var(--q2)"></i>5–7</span><span><i style="background:var(--q3)"></i>8–9</span><span><i style="background:var(--q4)"></i>10+</span>
+    <div class="legend" style="margin-top:12px"><span>Цифра в клетке — сколько детей было в этот день. Цвет:</span><span><i class="q1" style="background:var(--q1)"></i>1–4</span><span><i style="background:var(--q2)"></i>5–7</span><span><i style="background:var(--q3)"></i>8–9</span><span><i style="background:var(--q4)"></i>10+</span>
       <span><i style="background:none;box-shadow:inset 0 0 0 2px var(--ev)"></i>событие</span><span><i class="hatch"></i>приёма нет</span></div>
     <div class="ygrid">${months}</div>
     <section class="card"><div class="row"><h3 style="margin:0">События ${y}</h3></div>
@@ -1500,10 +1510,36 @@ function renderYear(){
   $('.ygrid').onmousemove = e => {
     const c = e.target.closest('.c[data-ds]'); if (!c){ tip.style.opacity = 0; return; }
     const d = pdate(c.dataset.ds), n = cnt.get(c.dataset.ds) || 0, evs = eventsOn(c.dataset.ds);
-    tip.innerHTML = `<b>${DAY[(d.getDay()+6)%7]}, ${dShort(d)}</b><br>${n ? n+' занятий' : 'занятий нет'}${evs.map(x=>'<br>• '+esc(evShort(x))).join('')}`;
+    tip.innerHTML = `<b>${DAY[(d.getDay()+6)%7]}, ${dShort(d)}</b><br>${n ? n+' '+plural(n,'ребёнок','ребёнка','детей') : 'занятий нет'}${evs.map(x=>'<br>• '+esc(evShort(x))).join('')}`;
     tip.style.left = Math.min(e.clientX+12, innerWidth-290)+'px'; tip.style.top = (e.clientY+14)+'px'; tip.style.opacity = 1;
   };
   $('.ygrid').onmouseleave = () => tip.style.opacity = 0;
+  const target = y===today().getFullYear() ? today().getMonth() : (V.calMonth && +V.calMonth.slice(0,4)===y ? +V.calMonth.slice(5)-1 : -1);
+  if (target >= 0 && V.yearScroll !== y+'-'+target){ V.yearScroll = y+'-'+target; requestAnimationFrame(() => $('#ym-'+target)?.scrollIntoView({block:'start'})); }
+}
+
+function openDayInfo(ds){
+  const d = pdate(ds), i = (d.getDay()+6)%7, key = ymd(mondayOf(d)), w = S.weeks[key];
+  const list = dayEntries(d), evs = eventsOn(ds), canGrid = i < S.settings.days;
+  const dn = DAYL[i][0].toUpperCase() + DAYL[i].slice(1);
+  const m = modal(`<div class="row"><button class="btn icon" data-nav="-1" title="Предыдущий день">‹</button>
+      <h3 style="margin:0;flex:1;text-align:center">${dn}, ${dShort(d)} ${d.getFullYear()}</h3>
+      <button class="btn icon" data-nav="1" title="Следующий день">›</button><button class="btn ghost icon" data-x title="Закрыть">×</button></div>
+    ${evs.length ? `<div class="evstrip">${evs.map(e=>`<button class="evchip ${e.off?'off':''}" data-ev="${e.id}">${e.time?esc(e.time)+' · ':''}${esc(e.title)}${e.off?' · приёма нет':''}</button>`).join('')}</div>` : ''}
+    <div style="margin-top:12px">${list.length ? `<div class="row" style="margin-bottom:6px"><b>${list.length} ${plural(list.length,'ребёнок','ребёнка','детей')}</b></div>
+      <table class="t"><tbody>${list.map(x=>`<tr><td class="muted" style="width:60px">${x.t}</td><td>${esc(x.txt)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted">Занятий нет.</div>'}</div>
+    ${list.length && i <= 5 ? `<div class="card dacc" style="margin-top:12px;padding:10px 12px">${dayAccHTML(w, i)}</div>` : ''}
+    <div class="row" style="margin-top:14px">
+      <button class="btn" data-add>+ Событие</button><span class="sp"></span>
+      ${canGrid && list.length ? '<button class="btn" data-send>Отправить</button>' : ''}
+      ${canGrid ? '<button class="btn pri" data-open>Открыть в неделе</button>' : ''}
+    </div>`, 520);
+  const el = m.el;
+  $$('[data-nav]', el).forEach(b => b.onclick = () => { m.close(); openDayInfo(ymd(addDays(d, +b.dataset.nav))); });
+  $$('[data-ev]', el).forEach(b => b.onclick = () => { m.close(); openEvent(evList().find(e=>e.id===b.dataset.ev)); });
+  $('[data-add]', el).onclick = () => { m.close(); openEvent({from: ds}); };
+  const sd = $('[data-send]', el); if (sd) sd.onclick = () => { m.close(); openSend({mode:'day', week:key, day:i}); };
+  const op = $('[data-open]', el); if (op) op.onclick = () => { m.close(); go('week', {week:key, day:i}); };
 }
 
 /* ============ start ============ */
