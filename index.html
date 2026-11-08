@@ -105,12 +105,14 @@ table.grid tfoot td{padding:7px 10px;color:var(--muted);font-size:13px;font-vari
 .calc .v.neg{color:var(--bad)}
 @media (max-width:640px){.calc{grid-template-columns:20px 1fr 92px 28px}.calc .h{display:none}.calc .L{grid-column:1}.calc .nm{grid-column:2/4}.calc .f{grid-column:2}.calc .v{grid-column:3}.calc input.nm{border-color:transparent;background:none;padding-left:0;font-weight:600}}
 .cols{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.cols>*{min-width:0}
 @media (max-width:900px){.cols{grid-template-columns:1fr}}
 textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 10px;resize:vertical;min-height:90px}
 
 /* lists / tables */
 table.t{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
-table.t th,table.t td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line2);white-space:nowrap}
+table.t th,table.t td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line2);overflow-wrap:anywhere}
+table.t th,table.t td.n,table.t td.nw{white-space:nowrap}
 table.t th{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 table.t td.n,table.t th.n{text-align:right}
 table.t tr.click{cursor:pointer}
@@ -126,7 +128,7 @@ table.t tfoot td{font-weight:650;border-bottom:0}
 .kid.on{background:var(--accent-soft)}
 .kid .c{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 input.search{width:100%;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 10px}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
 .tile{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
 .tile .k{font-size:13px;color:var(--muted)}
 .tile .val{font-size:26px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:2px}
@@ -270,6 +272,78 @@ table.grid tfoot td.time{border-top:1px solid var(--line);vertical-align:top;pad
 .ym.cur{box-shadow:0 0 0 2px var(--accent)}
 .card.dacc .ln{font-size:14px}
 @media (max-width:760px){.ym{scroll-margin-top:12px}}
+
+html{overflow-x:clip}
+main,section,.card{min-width:0}
+/* общая шапка периода: ‹ заголовок › на всю ширину */
+.phead{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;gap:8px;margin-top:16px;touch-action:pan-y}
+.phead .nav{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:22px;line-height:1;padding:0;color:var(--ink)}
+.phead .nav:active{background:var(--line2)}
+.ptitle{text-align:center;min-width:0}
+.ptitle h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:21px}
+.ptitle .titlepick{position:relative;display:inline-block;max-width:100%;cursor:pointer}
+.ptitle .titlepick input{display:block;position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.ptitle .titlepick h1{display:inline}
+.ptitle .titlepick::after{content:" ▾";font-size:12px;color:var(--muted)}
+.psub{font-size:13px;color:var(--muted);margin-top:2px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.psub button{border:0;background:none;padding:0;color:var(--accent);font-size:13px}
+.psub .k{color:var(--ink2)}
+/* сноски-события */
+.notes-ev{margin:10px auto 0;max-width:640px;display:grid;gap:4px}
+.notes-ev button{display:flex;gap:8px;align-items:center;border:0;background:none;padding:2px 4px;text-align:left;font-size:13px;color:var(--ink2);min-width:0}
+.notes-ev i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--ev)}
+.notes-ev i.off{background:var(--muted)}
+.notes-ev span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* спокойная панель действий */
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px auto 0;max-width:640px}
+.tools button{display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 4px;font-size:12px;color:var(--ink2)}
+.tools button:hover{border-color:var(--muted)}
+.tools button:disabled{opacity:.4}
+.tools svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.segfull{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.segfull button{border:0;background:none;padding:8px 6px;color:var(--ink2);font-size:14px}
+.segfull button.on{background:var(--ink);color:var(--bg)}
+.navrow{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;align-items:center;gap:8px}
+.navrow b{text-align:center}
+.navrow .nav{width:40px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:19px;padding:0}
+.calbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;max-width:640px;margin:12px auto 0;align-items:center}
+.calbar .btn{height:100%}
+.trunc{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* карточка ребёнка */
+.kstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.kstats div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.kstats b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.kstats span{font-size:12px;color:var(--muted)}
+.hbar{display:grid;grid-template-columns:52px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
+.hbar .bar{height:14px;border-radius:0 4px 4px 0;background:var(--accent);min-width:2px}
+.hbar .lbl{color:var(--muted);font-variant-numeric:tabular-nums}
+.hbar .v{text-align:right;font-variant-numeric:tabular-nums}
+.kidrow{cursor:pointer}
+.kidrow:hover td{background:var(--line2)}
+.snd.info svg{stroke-width:1.8}
+
+.mh .mn{margin-left:auto;font-size:12px;font-weight:650;color:var(--accent);background:var(--accent-soft);border-radius:999px;padding:1px 7px;font-variant-numeric:tabular-nums;line-height:1.4}
+.mh .add{margin-left:4px}
+.mc .mh .dn{font-size:14px}
+.yd .c{position:relative}
+.yd .c .yn{font-size:11px}
+.yd .c.has .yn{position:absolute;top:2px;left:3px;font-size:8px;opacity:.85;line-height:1}
+.yd .c .yc{font-size:13px;font-weight:750}
+.yd .c.has{padding-top:4px}
+.desk-only{}
+@media (max-width:760px){
+  .desk-only{display:none!important}
+  .mh{flex-direction:column!important;align-items:flex-start!important;gap:2px!important}
+  .mh .mn{margin-left:0!important}
+  .mc .mh .dn{font-size:12.5px}
+  .mh .mn{font-size:10.5px;padding:0 4px;display:inline-block!important}
+  .mh .zan{display:none}
+  .ptitle h1{font-size:19px}
+}
+@media (min-width:761px){ .mh .zan{display:inline} }
+.yd .c.hatch{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 8px);box-shadow:inset 0 0 0 1px var(--line)}
+.notes-ev{justify-items:center}
+.notes-ev button{max-width:100%}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
 </style>
 </head>
@@ -294,7 +368,7 @@ table.grid tfoot td.time{border-top:1px solid var(--line);vertical-align:top;pad
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-08.2';
+const APP_VERSION = '2026-11-08.3';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -368,6 +442,13 @@ function load(){
   S.settings = Object.assign({}, DEFAULTS, S.settings || {});
   if (!Array.isArray(S.events)) S.events = [];
   migrate();
+  const prevV = S.settings.appVersion;
+  if (prevV !== APP_VERSION){
+    // перед любым обновлением версии сохраняем полную копию данных в этом же браузере
+    if (Object.keys(S.weeks).length){ try { localStorage.setItem(KEY+'-preupdate', JSON.stringify({from: prevV || 'ранняя версия', to: APP_VERSION, at: Date.now(), data: clone(S)})); } catch(e){} }
+    S.settings.appVersion = APP_VERSION;
+    if (prevV || raw) V.updatedFrom = prevV || 'ранней версии';
+  }
   persist();
 }
 let storageOK = true;
@@ -628,29 +709,28 @@ function renderWeek(){
   const dcls = (d,i) => [ymd(d)===tds?'today':'', offDay[i]?'off':''].join(' ');
 
   $('#main').innerHTML = `
-  <div class="weekhead wk">
-    <button class="btn icon" id="wPrev" title="Предыдущая неделя">‹</button>
-    <h1 id="wTitle"><label class="titlepick">${weekTitle(key, nd)}<input type="date" class="wDate" value="${key}" aria-label="Перейти к дате"></label></h1>
-    <button class="btn icon" id="wNext" title="Следующая неделя">›</button>
-    <div class="acts">
-      <button class="btn ghost" id="wToday">Сегодня</button>
-      <input type="date" class="date wDate desk" value="${key}" title="Перейти к дате">
-      <span class="sp desk"></span>
-      <button class="pill kpi link" id="wN" title="Открыть учёт недели"></button>
-      <button class="btn" id="wCopy" ${hasPrev?'':'disabled'} title="Заполнить пустые ячейки по прошлой неделе">Как прошлая</button>
-      <button class="btn" id="wCopyTo" ${empty?'disabled':''} title="Скопировать или перенести неделю либо день на любую дату">Копировать…</button>
-      <button class="btn pri" id="wShare">Отправить…</button>
+  <div class="phead" id="wHead">
+    <button class="nav" id="wPrev" aria-label="Предыдущая неделя">‹</button>
+    <div class="ptitle">
+      <label class="titlepick"><h1>${weekTitle(key, nd)}</h1><input type="date" class="wDate" value="${key}" aria-label="Перейти к дате"></label>
+      <div class="psub"><button class="k" id="wN" title="Учёт недели"></button>${key!==ymd(mondayOf(today()))?'<button id="wToday">к текущей неделе</button>':''}</div>
     </div>
+    <button class="nav" id="wNext" aria-label="Следующая неделя">›</button>
   </div>
-  <div class="evstrip">${wev.map(e=>`<button class="evchip ${e.off?'off':''}" data-ev="${e.id}">${esc(evDates(e))}${e.time?' '+esc(e.time):''} · ${esc(e.title)}${e.off?' · приёма нет':''}</button>`).join('')}
-    <button class="btn ghost small" id="wEv">+ Событие</button></div>
+  ${wev.length ? `<div class="notes-ev">${wev.map(e=>`<button data-ev="${e.id}" title="${esc(evLine(e))}"><i class="${e.off?'off':''}"></i><span>${esc(evDates(e))}${e.time?', '+esc(e.time):''} · ${esc(e.title)}${e.off?' · приёма нет':''}</span></button>`).join('')}</div>` : ''}
+  <div class="tools">
+    <button id="wCopy" ${hasPrev?'':'disabled'} title="Заполнить пустые ячейки по прошлой неделе"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/></svg>Как прошлая</button>
+    <button id="wCopyTo" ${empty?'disabled':''} title="Скопировать или перенести неделю либо день"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Копировать</button>
+    <button id="wEv"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M12 13v5M9.5 15.5h5"/></svg>Событие</button>
+    <button id="wShare"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>Отправить</button>
+  </div>
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
     ${dates.map((d,i)=>`<th class="${dcls(d,i)}"><button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
-    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=>`<td class="${dcls(d,i)}"><div class="cw"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" list="kidnames" autocomplete="off"><button class="snd ${val(i,t)?'on':''}" title="Отправить расписание ребёнка на неделю" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button></div></td>`).join('')}</tr>`).join('')}
+    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=>`<td class="${dcls(d,i)}"><div class="cw"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(i,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button></div></td>`).join('')}</tr>`).join('')}
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=>`<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
   <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
-  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" list="kidnames" autocomplete="off"><button class="snd ${val(V.day,t)?'on':''}" title="Отправить расписание ребёнка на неделю" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button></div>`).join('')}</div>
+  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(V.day,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button></div>`).join('')}</div>
   <div class="dfoot"><div class="small muted" style="margin-bottom:4px">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</div><div class="dacc" data-dacc="${V.day}"></div></div>
   <section>
     <div class="card"><h3>Заметки к неделе</h3><textarea id="wNotes" rows="${Math.max(4, ((w&&w.notes)||'').split('\n').length+1)}" placeholder="Кто болеет, переносы, новенькие…">${esc(w&&w.notes||'')}</textarea></div>
@@ -658,7 +738,10 @@ function renderWeek(){
 
   $('#wPrev').onclick = () => go('week', {week: prevKey});
   $('#wNext').onclick = () => go('week', {week: ymd(addDays(mon,7))});
-  $('#wToday').onclick = () => go('week', {week: ymd(mondayOf(today())), day:null});
+  if ($('#wToday')) $('#wToday').onclick = () => go('week', {week: ymd(mondayOf(today())), day:null});
+  bindTitlePick($('#wHead'));
+  addSwipe($('#wHead'), () => go('week', {week: ymd(addDays(mon,7)), day: V.day}), () => go('week', {week: prevKey, day: V.day}));
+  addSwipe($('.gridwrap'), () => go('week', {week: ymd(addDays(mon,7))}), () => go('week', {week: prevKey}));
   $$('.wDate').forEach(inp => inp.onchange = e => { if (e.target.value){ const d = pdate(e.target.value), i = (d.getDay()+6)%7; go('week', {week: ymd(mondayOf(d)), day: i < S.settings.days ? i : 0}); } });
   $('#wCopy').onclick = copyPrevWeek;
   $('#wN').onclick = () => go('acc', {accWeek: key});
@@ -679,7 +762,7 @@ function renderWeek(){
   });
   $$('#main .snd').forEach(b => {
     b.addEventListener('mousedown', e => e.preventDefault());
-    b.onclick = () => { const k = parseEntry(b.previousElementSibling.value).key; if (k) openSend({mode:'kid', kid:k, week:key}); };
+    b.onclick = () => { const k = parseEntry(b.previousElementSibling.value).key; if (k) openKid(k, key); };
   });
   const dl = $('#dayList'); let sx = 0, sy = 0;
   dl.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive:true});
@@ -693,6 +776,18 @@ function renderWeek(){
   });
   updateWeekNumbers();
   refreshDatalist();
+}
+function addSwipe(el, onLeft, onRight){
+  if (!el) return; let sx = 0, sy = 0, t0 = 0;
+  el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; t0 = Date.now(); }, {passive:true});
+  el.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.6 || Date.now() - t0 > 800) return;
+    (dx < 0 ? onLeft : onRight)();
+  });
+}
+function bindTitlePick(root){
+  $$('.titlepick input', root).forEach(inp => inp.addEventListener('click', () => { try { inp.showPicker && inp.showPicker(); } catch(e){} }));
 }
 function markSame(inp){
   $$('.cell.same').forEach(c=>c.classList.remove('same'));
@@ -719,7 +814,7 @@ function updateWeekNumbers(){
     $$(`[data-cnt="${i}"]`).forEach(el => el.textContent = c || '');
   }
   const cnt = weekCount(w);
-  $('#wN').textContent = 'Занятий: ' + cnt;
+  $('#wN').textContent = cnt + ' ' + plural(cnt,'занятие','занятия','занятий') + ' за неделю';
   $$('[data-dacc]').forEach(el => el.innerHTML = dayAccHTML(w, +el.dataset.dacc));
 }
 /* учёт дня: занятия дня × ставки из формул недели (строки вида ставка*N; недельные вычеты не делятся по дням) */
@@ -743,7 +838,7 @@ function dayAccHTML(w, i){
   if (i===5 && !rates.length) rates = [{name:'Суббота', rate:S.settings.satRate}];
   const total = rates.reduce((a,r)=>a+r.rate*c, 0);
   return `<b>${c} ${plural(c,'занятие','занятия','занятий')}</b>` +
-    rates.map(r => `<div class="ln" title="${fmtNum(r.rate)} × ${c}"><span>${i===5 ? fmtNum(r.rate)+' × '+c : esc(r.name)}</span><span>${fmtMoney(r.rate*c)}</span></div>`).join('') +
+    rates.map(r => `<div class="ln" title="${esc(r.name)}: ${fmtNum(r.rate)} × ${c}"><span>${i===5 ? fmtNum(r.rate)+' × '+c : esc(r.name)}</span><span>${fmtMoney(r.rate*c)}</span></div>`).join('') +
     (rates.length > 1 ? `<div class="ln tot"><span>Общая</span><span>${fmtMoney(total)}</span></div>` : '');
 }
 const plural = (n, a, b, c) => { const m10 = n%10, m100 = n%100; return m10===1 && m100!==11 ? a : m10>=2 && m10<=4 && (m100<12 || m100>14) ? b : c; };
@@ -881,28 +976,29 @@ const mhead = t => `<div class="row"><h3 style="margin:0">${t}</h3><span class="
 function openSend(o={}){
   const st = {mode:o.mode||'week', week:o.week||V.week, day:o.day??0, kid:o.kid||null, ev:true};
   const m = modal(`${mhead('Отправить расписание')}
-    <div class="row" style="margin-top:12px"><div class="seg" id="sMode"><button data-m="week">Неделя</button><button data-m="day">День</button><button data-m="kid">Ребёнок</button></div>
-      <span class="sp"></span><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn icon" id="sPrev" title="Предыдущая неделя">‹</button><b id="sWeek" class="small" style="min-width:130px;text-align:center"></b><button class="btn icon" id="sNext" title="Следующая неделя">›</button></span></div>
-    <div id="sOpts" class="row" style="margin-top:10px;min-height:34px"></div>
-    <textarea id="sText" style="min-height:270px;margin-top:10px"></textarea>
-    <div class="row" style="margin-top:10px"><label class="row small muted" style="gap:6px"><input type="checkbox" id="sEv" checked> С событиями</label><span class="small muted">Текст можно поправить</span><span class="sp"></span>
-      ${navigator.share?'<button class="btn" id="sSh">Поделиться</button>':''}<button class="btn pri" id="sCp">Копировать</button></div>`, 620);
+    <div class="segfull" id="sMode" style="margin-top:12px"><button data-m="week">Неделя</button><button data-m="day">День</button><button data-m="kid">Ребёнок</button></div>
+    <div class="navrow" style="margin-top:10px"><button class="nav" id="sPrev" aria-label="Предыдущая неделя">‹</button><b id="sWeek" class="trunc"></b><button class="nav" id="sNext" aria-label="Следующая неделя">›</button></div>
+    <div id="sOpts" style="margin-top:10px"></div>
+    <textarea id="sText" style="min-height:240px;margin-top:10px"></textarea>
+    <label class="row small muted" style="gap:6px;margin-top:8px"><input type="checkbox" id="sEv" checked> Добавить события недели · текст можно поправить</label>
+    <div style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-top:10px">
+      ${navigator.share?'<button class="btn" id="sSh" style="padding:10px">Поделиться</button>':''}<button class="btn pri" id="sCp" style="padding:10px">Копировать</button></div>`, 620);
   const el = m.el;
   const kidsOfWeek = () => { const mp = new Map(); for (const e of entries(S.weeks[st.week]).sort((a,b)=>a.i-b.i||a.t.localeCompare(b.t))){ const p = parseEntry(e.txt); if (p.key && !mp.has(p.key)) mp.set(p.key, index().get(p.key)?.name || p.base); } return [...mp.entries()].sort((a,b)=>a[1].localeCompare(b[1],'ru')); };
   function draw(){
     $$('#sMode button', el).forEach(b => b.classList.toggle('on', b.dataset.m===st.mode));
-    $('#sWeek', el).textContent = weekShort(st.week) + ' ' + pdate(st.week).getFullYear();
+    $('#sWeek', el).textContent = weekTitle(st.week, S.settings.days);
     const opts = $('#sOpts', el), mon = pdate(st.week);
     if (st.mode==='day'){
-      opts.innerHTML = [...Array(S.settings.days)].map((_,i)=>`<button class="btn ${i===st.day?'pri':''}" data-d="${i}">${DAY[i]} ${addDays(mon,i).getDate()}</button>`).join('');
+      opts.innerHTML = `<div class="segfull">${[...Array(S.settings.days)].map((_,i)=>`<button class="${i===st.day?'on':''}" data-d="${i}">${DAY[i]} ${addDays(mon,i).getDate()}</button>`).join('')}</div>`;
       $$('[data-d]', opts).forEach(b => b.onclick = () => { st.day = +b.dataset.d; draw(); });
     } else if (st.mode==='kid'){
       const wk = kidsOfWeek(), lim = ymd(addDays(today(),-150));
       const rest = [...index().values()].filter(k => !wk.some(([key])=>key===k.key) && (k.key===st.kid || k.ss.some(x=>x.ds>=lim))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
       if (!st.kid) st.kid = (wk[0]||[])[0] || (rest[0]||{}).key;
-      opts.innerHTML = `<select id="sKid" class="date" style="min-width:230px">${wk.length?`<optgroup label="Есть на этой неделе">${wk.map(([k,n])=>`<option value="${esc(k)}">${esc(n)}</option>`).join('')}</optgroup>`:''}<optgroup label="Остальные">${rest.map(k=>`<option value="${esc(k.key)}">${esc(k.name)}</option>`).join('')}</optgroup></select>`;
+      opts.innerHTML = `<select id="sKid" class="date" style="width:100%">${wk.length?`<optgroup label="Есть на этой неделе">${wk.map(([k,n])=>`<option value="${esc(k)}">${esc(n)}</option>`).join('')}</optgroup>`:''}<optgroup label="Остальные">${rest.map(k=>`<option value="${esc(k.key)}">${esc(k.name)}</option>`).join('')}</optgroup></select>`;
       const sel = $('#sKid', opts); sel.value = st.kid; sel.onchange = () => { st.kid = sel.value; draw(); };
-    } else opts.innerHTML = '<span class="small muted">Всё расписание недели, например для коллеги</span>';
+    } else opts.innerHTML = '<div class="small muted" style="text-align:center">Всё расписание недели — например, для коллеги</div>';
     const kid = index().get(st.kid);
     $('#sText', el).value = st.mode==='week' ? weekText(st.week, st.ev) : st.mode==='day' ? dayText(st.week, st.day, st.ev) : kid ? kidText(kid, st.week, st.ev) : 'Выберите ребёнка';
   }
@@ -991,21 +1087,29 @@ function collect(fromDs, toDs){
     for (const e of entries(w)){
       const d = addDays(mon, e.i), ds = ymd(d);
       if (ds < fromDs || ds > toDs) continue;
-      out.push({d, ds, week:key, i:e.i, key: parseEntry(e.txt).key});
+      out.push({d, ds, week:key, i:e.i, t:e.t, key: parseEntry(e.txt).key});
     }
   }
   return out;
 }
+function kidStats(){
+  const t = today(), tds = ymd(t), y1 = ymd(addDays(t,-365)), d30 = ymd(addDays(t,-30));
+  return [...index().values()].map(k => {
+    const past = k.ss.filter(s => s.ds <= tds);
+    return {key:k.key, name:k.name, y:past.filter(s=>s.ds>y1).length, m:past.filter(s=>s.ds>d30).length, total:past.length, last:past[past.length-1], first:past[0], next:k.ss.find(s=>s.ds>tds)};
+  }).filter(x => x.y > 0).sort((a,b) => b.y - a.y || b.m - a.m || a.name.localeCompare(b.name,'ru'));
+}
 function renderStats(){
   const t = today(), tds = ymd(t);
-  const P = { all:['Всё время','0000-00-00'], year:['С начала года', t.getFullYear()+'-01-01'], m3:['3 месяца', ymd(new Date(t.getFullYear(), t.getMonth()-3, t.getDate()))], m1:['Месяц', ymd(new Date(t.getFullYear(), t.getMonth()-1, t.getDate()))] };
+  const P = { all:['Всё время','0000-00-00'], year:['Этот год', t.getFullYear()+'-01-01'], m3:['3 месяца', ymd(new Date(t.getFullYear(), t.getMonth()-3, t.getDate()))], m1:['Месяц', ymd(new Date(t.getFullYear(), t.getMonth()-1, t.getDate()))] };
   const ss = collect(P[V.period][1], tds);
-  const days = new Map(), weeks = new Map(), months = new Map(), wd = [0,0,0,0,0,0,0], wdDays = [new Set(),new Set(),new Set(),new Set(),new Set(),new Set(),new Set()];
+  const days = new Map(), weeks = new Map(), months = new Map(), wd = [0,0,0,0,0,0,0], wdDays = [new Set(),new Set(),new Set(),new Set(),new Set(),new Set(),new Set()], slotsMap = new Map();
   ss.forEach(s => {
     days.set(s.ds, (days.get(s.ds)||0)+1);
     const w = weeks.get(s.week) || {n:0, kids:new Set()}; w.n++; w.kids.add(s.key); weeks.set(s.week, w);
     const mk = monthKey(s.d); const m = months.get(mk) || {n:0, kids:new Set(), days:new Set()}; m.n++; m.kids.add(s.key); m.days.add(s.ds); months.set(mk, m);
     wd[s.i]++; wdDays[s.i].add(s.ds);
+    if (s.i < 5) slotsMap.set(s.t, (slotsMap.get(s.t)||0)+1);
   });
   const curM = monthKey(t);
   let firstDs = null; for (const [key,w] of Object.entries(S.weeks)) for (const e of entries(w)){ const ds = ymd(addDays(pdate(key),e.i)); if (!firstDs || ds<firstDs) firstDs = ds; }
@@ -1020,11 +1124,15 @@ function renderStats(){
   const kidsWeek = avg([...weeks.values()].map(w=>w.kids.size));
   const kidsMonth = avg(mArr.map(([,m])=>m.kids.size));
   const uniq = new Set(ss.map(s=>s.key)).size;
+  const weekdayDays = new Set(ss.filter(s=>s.i<5).map(s=>s.ds)).size;
+  const kids = kidStats();
+  const maxY = Math.max(1, ...kids.map(k=>k.y));
+  V.statsKids = V.statsKids || 25;
 
   $('#main').innerHTML = `
-  <div class="row" style="margin-top:18px"><h1>Статистика</h1><span class="sp"></span>
-    <div class="seg" id="per">${Object.entries(P).map(([k,v])=>`<button data-p="${k}" class="${V.period===k?'on':''}">${v[0]}</button>`).join('')}</div></div>
-  <div class="hint">Считаются занятия по расписанию до сегодняшнего дня. Средние — по дням и неделям, где были занятия; месяц — по полным месяцам (неполные — светлее на графике)${fullMonths.length?'':'; полных месяцев в периоде нет, учтены все'}.</div>
+  <h1 style="margin-top:18px">Статистика</h1>
+  <div class="segfull" id="per" style="margin-top:10px">${Object.entries(P).map(([k,v])=>`<button data-p="${k}" class="${V.period===k?'on':''}">${v[0]}</button>`).join('')}</div>
+  <div class="hint">Занятия по расписанию до сегодняшнего дня. Средние считаются по дням и неделям с занятиями, месяц — по полным месяцам.</div>
   <section class="tiles">
     ${tile('В среднем в день', fmtNum(perDay,1), `за ${days.size} раб. дн.`)}
     ${tile('В среднем в неделю', fmtNum(perWeek,1), `за ${weeks.size} нед.`)}
@@ -1033,43 +1141,89 @@ function renderStats(){
     ${tile('Разных детей в месяц', fmtNum(kidsMonth,1), 'в среднем')}
     ${tile('Всего занятий', fmtNum(total), `${uniq} разных детей`)}
   </section>
-  <section class="card"><h3>Занятий по месяцам</h3><div class="chart" id="chart"></div></section>
+  <section class="card"><div class="row"><h3 style="margin:0">Занятий по месяцам</h3><span class="sp"></span><span class="small muted">пунктир — среднее за полный месяц: ${fmtNum(perMonth,0)}</span></div><div class="chart" id="chM"></div></section>
+  <section class="card"><div class="row"><h3 style="margin:0">Занятий по неделям</h3><span class="sp"></span><span class="small muted">последние ${Math.min(26, weeks.size)} нед. · пунктир — среднее: ${fmtNum(perWeek,1)}</span></div><div class="chart" id="chW"></div></section>
   <section class="cols">
-    <div class="card"><h3>По месяцам</h3><div class="tscroll"><table class="t"><thead><tr><th>Месяц</th><th class="n">Занятий</th><th class="n">Раб. дней</th><th class="n">В день</th><th class="n">Детей</th></tr></thead>
-      <tbody>${[...months.entries()].sort().reverse().map(([k,m])=>`<tr><td>${monthName(k)}${k===curM?' <span class="muted small">идёт</span>':partial(k)?' <span class="muted small">неполный</span>':''}</td><td class="n">${m.n}</td><td class="n">${m.days.size}</td><td class="n">${fmtNum(m.n/m.days.size,1)}</td><td class="n">${m.kids.size}</td></tr>`).join('')}</tbody></table></div></div>
-    <div class="card"><h3>По дням недели</h3><table class="t"><thead><tr><th>День</th><th class="n">В среднем</th><th class="n">Дней</th></tr></thead>
-      <tbody>${wd.map((n,i)=> wdDays[i].size ? `<tr><td>${DAY[i]}</td><td class="n">${fmtNum(n/wdDays[i].size,1)}</td><td class="n">${wdDays[i].size}</td></tr>` : '').join('')}</tbody></table></div>
-  </section>`;
+    <div class="card"><h3>По дням недели</h3><div class="small muted" style="margin-bottom:6px">в среднем детей за день</div>
+      ${wd.map((n,i)=> wdDays[i].size ? hbar(DAY[i], n/wdDays[i].size, Math.max(...wd.map((x,j)=>wdDays[j].size?x/wdDays[j].size:0)), fmtNum(n/wdDays[i].size,1)) : '').join('')}</div>
+    <div class="card"><h3>Загрузка по времени</h3><div class="small muted" style="margin-bottom:6px">как часто время занято, Пн–Пт</div>
+      ${[...slotsMap.entries()].sort().map(([tm,n]) => hbar(tm, n/weekdayDays, 1, Math.round(100*n/weekdayDays)+'%')).join('')}</div>
+  </section>
+  <section class="card">
+    <div class="row"><h3 style="margin:0">Дети за последние 12 месяцев</h3><span class="sp"></span><span class="small muted">${kids.length} детей · по убыванию</span></div>
+    <div class="hint" style="margin-top:4px">«Матвей?», «Мирон 4/10», «Мирон 9» считаются одним ребёнком. Нажмите на имя — откроется карточка.</div>
+    <div class="tscroll"><table class="t" style="margin-top:8px"><thead><tr><th>Ребёнок</th><th class="n">12 мес</th><th class="n">30 дней</th><th class="n">Последнее</th></tr></thead>
+      <tbody>${kids.slice(0, V.statsKids).map(k=>`<tr class="kidrow" data-kid="${esc(k.key)}"><td><div class="trunc" style="max-width:46vw">${esc(k.name)}</div><div style="height:4px;margin-top:3px;border-radius:2px;background:var(--accent);opacity:.75;width:${Math.max(2, 100*k.y/maxY)}%"></div></td><td class="n"><b>${k.y}</b></td><td class="n">${k.m || '<span class="muted">0</span>'}</td><td class="n muted">${k.last ? k.last.date.getDate()+' '+MS[k.last.date.getMonth()] : '—'}</td></tr>`).join('')}</tbody></table></div>
+    ${kids.length > V.statsKids ? `<div style="text-align:center;margin-top:8px"><button class="btn ghost" id="kMore">Показать всех (${kids.length})</button></div>` : ''}
+  </section>
+  <section class="card"><h3>По месяцам</h3><div class="tscroll"><table class="t"><thead><tr><th>Месяц</th><th class="n">Занятий</th><th class="n">Дней</th><th class="n">В день</th><th class="n">Детей</th></tr></thead>
+      <tbody>${[...months.entries()].sort().reverse().map(([k,m])=>`<tr><td>${monthName(k)}${k===curM?' <span class="muted small">идёт</span>':partial(k)?' <span class="muted small">неполный</span>':''}</td><td class="n">${m.n}</td><td class="n">${m.days.size}</td><td class="n">${fmtNum(m.n/m.days.size,1)}</td><td class="n">${m.kids.size}</td></tr>`).join('')}</tbody></table></div></section>`;
   $$('#per button').forEach(b => b.onclick = () => { V.period = b.dataset.p; renderStats(); });
-  drawChart([...months.entries()].sort().map(([k,m])=>({k, n:m.n, days:m.days.size, cur:partial(k), curNow:k===curM})));
+  if ($('#kMore')) $('#kMore').onclick = () => { V.statsKids = 1e9; renderStats(); };
+  $$('#main [data-kid]').forEach(tr => tr.onclick = () => openKid(tr.dataset.kid));
+  const mData = [...months.entries()].sort().map(([k,m]) => { const [yy,mm] = k.split('-').map(Number); return {label: MS[mm-1] + (mm===1 ? ' '+String(yy).slice(2) : ''), v: m.n, light: partial(k), tip: `<b>${monthName(k)}</b>${k===curM?' (идёт)':partial(k)?' (неполный)':''}<br>${m.n} занятий · ${m.days.size} раб. дн.<br>${fmtNum(m.n/m.days.size,1)} в день · ${m.kids.size} детей`}; });
+  barChart($('#chM'), mData, {avg: perMonth, labels: 'all'});
+  const wk = [...weeks.entries()].sort().slice(-26).map(([k,w]) => ({label: pdate(k).getDate()+'.'+pad(pdate(k).getMonth()+1), v: w.n, light: k===ymd(mondayOf(t)), tip: `<b>${weekTitle(k)}</b><br>${w.n} занятий · ${w.kids.size} детей`}));
+  barChart($('#chW'), wk, {avg: perWeek, labels: 'sparse'});
 }
 const tile = (k, v, s) => `<div class="tile"><div class="k">${k}</div><div class="val">${v}</div><div class="s">${s}</div></div>`;
-function drawChart(data){
-  const el = $('#chart'); if (!data.length){ el.innerHTML = '<div class="muted small">Нет данных</div>'; return; }
-  const W = 900, H = 240, L = 36, R = 8, T = 14, B = 30;
-  const max = Math.max(...data.map(d=>d.n)); const step = max>150?50:max>60?20:10; const top = Math.ceil(max/step)*step || step;
-  const bw = (W-L-R)/data.length, barW = Math.min(46, bw-6);
+const hbar = (lbl, v, max, txt) => `<div class="hbar"><span class="lbl">${lbl}</span><span><div class="bar" style="width:${Math.min(100, Math.max(1, 100*v/(max||1)))}%"></div></span><span class="v">${txt}</span></div>`;
+function barChart(el, data, o={}){
+  if (!el) return;
+  if (!data.length){ el.innerHTML = '<div class="muted small">Нет данных</div>'; return; }
+  const W = Math.max(280, el.clientWidth || 600), narrow = W < 520, H = narrow ? 190 : 230, L = 30, R = 6, T = 18, B = 24;
+  const max = Math.max(...data.map(d=>d.v), o.avg||0); const step = max>150?50:max>60?20:max>20?10:5; const top = Math.ceil(max/step)*step || step;
+  const bw = (W-L-R)/data.length, barW = Math.max(3, Math.min(42, bw*0.7));
   const y = v => T + (H-T-B)*(1 - v/top);
   let g = '';
-  for (let v=0; v<=top; v+=step) g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line2)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`;
+  for (let v=0; v<=top; v+=step) g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line2)"/><text x="${L-5}" y="${y(v)+4}" text-anchor="end" font-size="10.5" fill="var(--muted)">${v}</text>`;
+  const maxI = data.reduce((a,d,i)=> d.v > data[a].v ? i : a, 0);
+  const labelEvery = Math.ceil(data.length / Math.floor((W-L-R) / (narrow ? 34 : 44)));
   data.forEach((d,i) => {
-    const x = L + bw*i + (bw-barW)/2, h = Math.max(0, y(0)-y(d.n)), r = Math.min(4, h/2);
-    const path = `M${x},${y(0)} V${y(d.n)+r} Q${x},${y(d.n)} ${x+r},${y(d.n)} H${x+barW-r} Q${x+barW},${y(d.n)} ${x+barW},${y(d.n)+r} V${y(0)} Z`;
-    const [yy,mm] = d.k.split('-').map(Number);
-    g += `<path d="${path}" fill="var(--accent)" opacity="${d.cur?0.45:1}"/>`;
-    g += `<text x="${x+barW/2}" y="${H-B+16}" text-anchor="middle" font-size="11" fill="var(--muted)">${MS[mm-1]}${mm===1||i===0?' '+String(yy).slice(2):''}</text>`;
+    const x = L + bw*i + (bw-barW)/2, h = Math.max(0, y(0)-y(d.v)), r = Math.min(4, h/2, barW/2);
+    g += `<path d="M${x},${y(0)} V${y(d.v)+r} Q${x},${y(d.v)} ${x+r},${y(d.v)} H${x+barW-r} Q${x+barW},${y(d.v)} ${x+barW},${y(d.v)+r} V${y(0)} Z" fill="var(--accent)" opacity="${d.light?0.4:1}"/>`;
+    const showVal = o.labels==='all' ? (bw >= 22) : (i===maxI || i===data.length-1);
+    if (showVal && d.v) g += `<text x="${x+barW/2}" y="${y(d.v)-5}" text-anchor="middle" font-size="10.5" font-weight="600" fill="var(--ink2)">${d.v}</text>`;
+    if (i % labelEvery === 0 || i===data.length-1 && labelEvery===1) g += `<text x="${x+barW/2}" y="${H-B+15}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${d.label}</text>`;
     g += `<rect x="${L+bw*i}" y="${T}" width="${bw}" height="${H-T-B}" fill="transparent" data-i="${i}"/>`;
   });
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Занятий по месяцам">${g}<line x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/></svg><div class="tip"></div>`;
+  if (o.avg){ g += `<line x1="${L}" x2="${W-R}" y1="${y(o.avg)}" y2="${y(o.avg)}" stroke="var(--ink2)" stroke-dasharray="4 4" stroke-width="1"/>`; }
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">${g}<line x1="${L}" x2="${W-R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/></svg><div class="tip"></div>`;
   const tip = $('.tip', el), svg = $('svg', el);
-  $$('rect[data-i]', svg).forEach(rc => {
-    rc.addEventListener('mouseenter', () => {
-      const d = data[+rc.dataset.i]; const bb = svg.getBoundingClientRect(), sc = bb.width/W;
-      tip.innerHTML = `<b>${monthName(d.k)}</b>${d.curNow?' (идёт)':d.cur?' (неполный)':''}<br>${d.n} занятий · ${d.days} раб. дн. · ${fmtNum(d.n/d.days,1)} в день`;
-      tip.style.left = ((L + bw*(+rc.dataset.i) + bw/2)*sc)+'px'; tip.style.top = (y(d.n)*sc - 6)+'px'; tip.style.opacity = 1;
-    });
-    rc.addEventListener('mouseleave', () => tip.style.opacity = 0);
-  });
+  const show = rc => { const d = data[+rc.dataset.i], sc = svg.getBoundingClientRect().width / W; tip.innerHTML = d.tip || (d.label+': '+d.v);
+    const cx = (L + bw*(+rc.dataset.i) + bw/2) * sc; tip.style.left = Math.min(Math.max(cx, 80), svg.getBoundingClientRect().width - 80) + 'px'; tip.style.top = (y(d.v)*sc - 6) + 'px'; tip.style.opacity = 1; };
+  $$('rect[data-i]', svg).forEach(rc => { rc.addEventListener('mouseenter', () => show(rc)); rc.addEventListener('click', () => show(rc)); rc.addEventListener('mouseleave', () => tip.style.opacity = 0); });
+}
+function openKid(key, weekKey){
+  const kid = index().get(key); if (!kid) return;
+  const t = today(), tds = ymd(t), past = kid.ss.filter(s => s.ds <= tds);
+  const c30 = past.filter(s => s.ds > ymd(addDays(t,-30))).length, c365 = past.filter(s => s.ds > ymd(addDays(t,-365))).length;
+  let wk = weekKey || ymd(t.getDay()===0||t.getDay()===6 ? addDays(mondayOf(t),7) : mondayOf(t));
+  const from = ymd(addDays(t,-42)), freq = {};
+  kid.ss.filter(s => s.ds > from && s.ds <= tds).forEach(s => { const k = s.i+'|'+s.t; freq[k] = (freq[k]||0)+1; });
+  const usual = Object.entries(freq).filter(([,c])=>c>=2).sort((a,b)=>a[0].localeCompare(b[0])).map(([k]) => { const [i,tt] = k.split('|'); return DAY[i]+' '+tt; });
+  const byM = {}; past.forEach(s => { const m = monthKey(s.date); byM[m] = (byM[m]||0)+1; });
+  const months = []; for (let i = 11; i >= 0; i--){ const d = new Date(t.getFullYear(), t.getMonth()-i, 1); months.push(monthKey(d)); }
+  const maxM = Math.max(1, ...months.map(m => byM[m]||0));
+  const m = modal(`<div id="kidBox"></div>`, 560);
+  function draw(){
+    const ws = kid.ss.filter(s => s.week === wk);
+    $('#kidBox', m.el).innerHTML = `${mhead(esc(kid.name))}
+      <div class="small muted">${past.length ? `с ${dShort(past[0].date)} ${past[0].date.getFullYear()} · последнее ${dShort(past[past.length-1].date)}` : 'прошедших занятий нет'}${usual.length ? ' · обычно ' + usual.join(', ') : ''}</div>
+      <div class="kstats"><div><b>${c30}</b><span>за 30 дней</span></div><div><b>${c365}</b><span>за 12 месяцев</span></div><div><b>${past.length}</b><span>всего</span></div></div>
+      <div class="navrow" style="margin-top:14px"><button class="nav" data-w="-7">‹</button><b class="trunc">${weekTitle(wk, S.settings.days)}</b><button class="nav" data-w="7">›</button></div>
+      <div style="margin-top:6px">${ws.length ? `<table class="t"><tbody>${ws.map(s=>`<tr><td class="nw">${DAY[s.i]}, ${dShort(s.date)}</td><td class="n">${s.t}</td><td class="muted">${esc(s.txt)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted small" style="text-align:center;padding:8px">На этой неделе занятий нет</div>'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn" id="kRenOpen" style="padding:10px">Переименовать</button><button class="btn pri" id="kSend" style="padding:10px">Отправить расписание</button></div>
+      <div id="kRenBox" style="display:none;margin-top:10px"><div class="row"><input class="search" id="kNew" style="flex:1;min-width:0" value="${esc(kid.name)}"><button class="btn" id="kRen">Сохранить</button></div>
+        <div class="hint">Если вписать имя другого ребёнка, записи объединятся.</div></div>
+      <h3 style="margin-top:16px">Занятий по месяцам</h3>
+      ${months.map(mk => { const [yy,mm] = mk.split('-').map(Number); return hbar(MS[mm-1]+(mm===1||mk===months[0]?' '+String(yy).slice(2):''), byM[mk]||0, maxM, byM[mk]||0); }).join('')}`;
+    $$('[data-w]', m.el).forEach(b => b.onclick = () => { wk = ymd(addDays(pdate(wk), +b.dataset.w)); draw(); });
+    $('#kSend', m.el).onclick = () => { m.close(); openSend({mode:'kid', kid:key, week:wk}); };
+    $('#kRenOpen', m.el).onclick = () => { $('#kRenBox', m.el).style.display = ''; $('#kNew', m.el).focus(); };
+    $('#kRen', m.el).onclick = () => { m.close(); renameKid(kid, $('#kNew', m.el).value); };
+  }
+  draw();
 }
 
 /* ============ DATA / EXPORT ============ */
@@ -1086,6 +1240,8 @@ function renderData(){
     <div class="hint">Из Excel подойдёт сетка «время × дни» (как ваша таблица), список с колонками «Дата, Время, Ребёнок» или выгрузка из этого приложения. Перед загрузкой я покажу, что нашлось, и спрошу, как добавить. Таблицу Numbers сначала сохраните в Excel: Файл → Экспортировать → Excel. Файл-копия (.html или .json) восстанавливает всё целиком.${isTouch()?' Файл из Telegram: откройте его в чате → «Поделиться» → «Сохранить в Файлы», затем выберите здесь.':''}</div>
     ${undo?`<hr><div class="row"><span class="small">Можно отменить: «${esc(undo.label)}» (${new Date(undo.at).toLocaleString('ru-RU')})</span><button class="btn" id="iUndo">Отменить</button></div>`:''}
   </section>
+  ${(() => { let pu = null; try { pu = JSON.parse(localStorage.getItem(KEY+'-preupdate')||'null'); } catch(e){} return pu ? `<section class="card"><h3>Перед последним обновлением</h3>
+    <div class="row"><span class="small">Копия от ${fmtDT(pu.at)} (версия ${esc(pu.from)} → ${esc(pu.to)}): ${Object.keys(pu.data.weeks||{}).length} недель</span><span class="sp"></span><button class="btn ghost" id="puBack">Вернуть</button></div></section>` : ''; })()}
   ${(() => { const ds = dailySnapshots(); return ds.length ? `<section class="card"><h3>Автокопии в этом браузере</h3>
     <div class="small muted">Приложение само сохраняет состояние за каждый день работы (последние 14 дней).</div>
     <table class="t" style="margin-top:6px"><tbody>${ds.map((x,i)=>`<tr><td>${fmtDT(x.at)}</td><td class="muted">${Object.keys(x.data.weeks||{}).length} недель</td><td class="n">${i===0?'<span class="muted small">сегодня</span>':`<button class="btn ghost" data-snap="${i}">Вернуть</button>`}</td></tr>`).join('')}</tbody></table></section>` : ''; })()}
@@ -1139,6 +1295,8 @@ function renderData(){
   $('#eJson').onclick = exportJSON;
   $('#eApp').onclick = exportApp;
   bindInstall($('#instCard'));
+  if ($('#puBack')) $('#puBack').onclick = () => { const pu = JSON.parse(localStorage.getItem(KEY+'-preupdate')); if (!confirm('Вернуть данные к состоянию перед обновлением ('+fmtDT(pu.at)+')?')) return;
+    snapshot('Возврат к копии перед обновлением'); S = pu.data; S.settings = Object.assign({}, DEFAULTS, S.settings||{}, {appVersion: APP_VERSION}); if (!Array.isArray(S.events)) S.events = []; migrate(); dirty(); save(); renderData(); toast('Готово', {label:'Отменить', fn: undoLast}); };
   $$('[data-snap]').forEach(b => b.onclick = () => { const x = dailySnapshots()[+b.dataset.snap]; if (!x || !confirm('Вернуть расписание к состоянию на '+fmtDT(x.at)+'? Текущее состояние можно будет вернуть кнопкой «Отменить».')) return;
     snapshot('Возврат к автокопии'); S = x.data; S.settings = Object.assign({}, DEFAULTS, S.settings||{}); if (!Array.isArray(S.events)) S.events = []; migrate(); dirty(); save(); renderData(); toast('Готово', {label:'Отменить', fn: undoLast}); });
   $('#eXlsx').onclick = exportXLSX;
@@ -1372,10 +1530,10 @@ function openCopy(){
   const m = modal(`${mhead('Копировать расписание')}
     <div class="small muted" style="margin-top:4px">Откуда: неделя ${weekTitle(src, S.settings.days)}</div>
     <div class="form">
-      <div class="row"><span class="lbl">Что</span><div class="seg" id="cWhat"><button data-w="week">Всю неделю</button><button data-w="day">Один день</button></div></div>
-      <div class="row" id="cDays" style="padding-left:58px"></div>
+      <div class="row"><span class="lbl">Что</span><div class="segfull" id="cWhat" style="flex:1"><button data-w="week">Всю неделю</button><button data-w="day">Один день</button></div></div>
+      <div class="row" id="cDays"></div>
       <div class="row"><span class="lbl">Куда</span><input type="date" id="cTo" class="date" value="${st.to}"><span id="cToL" class="small"></span></div>
-      <div class="row"><span class="lbl">Как</span><div class="seg" id="cMode"><button data-c="empty">Только в пустые ячейки</button><button data-c="replace">Заменить всё</button></div></div>
+      <div class="row"><span class="lbl">Как</span><div class="segfull" id="cMode" style="flex:1"><button data-c="empty">Только в пустые ячейки</button><button data-c="replace">Заменить всё</button></div></div>
       <label class="row" style="gap:8px;color:var(--ink)"><input type="checkbox" id="cStrip" checked> Убрать номера занятий («Мирон 4/10», «Мирон 9» → «Мирон»)</label>
       <label class="row" style="gap:8px;color:var(--ink)"><input type="checkbox" id="cMove"> Перенести: очистить исходную ${'неделю/день'}</label>
     </div>
@@ -1397,7 +1555,7 @@ function openCopy(){
     $$('#cWhat button', el).forEach(b => b.classList.toggle('on', b.dataset.w===st.what));
     $$('#cMode button', el).forEach(b => b.classList.toggle('on', b.dataset.c===st.mode));
     const cd = $('#cDays', el);
-    cd.innerHTML = st.what==='day' ? [...Array(S.settings.days)].map((_,i)=>`<button class="btn ${i===st.day?'pri':''}" data-d="${i}">${DAY[i]} ${addDays(mon,i).getDate()}</button>`).join('') : '';
+    cd.innerHTML = st.what==='day' ? `<div class="segfull" style="flex:1">${[...Array(S.settings.days)].map((_,i)=>`<button class="${i===st.day?'on':''}" data-d="${i}">${DAY[i]} ${addDays(mon,i).getDate()}</button>`).join('')}</div>` : '';
     cd.style.display = st.what==='day' ? '' : 'none';
     $$('[data-d]', cd).forEach(b => b.onclick = () => { st.day = +b.dataset.d; draw(); });
     const P = plan();
@@ -1449,18 +1607,21 @@ function renderCal(){
   if (!V.calYear) V.calYear = t.getFullYear();
   if (V.cal==='year') renderYear(); else renderMonth();
 }
-function calHead(title, extra=''){
-  return `<div class="weekhead">
-    <button class="btn icon" id="cPrevP">‹</button><h1 style="min-width:220px;text-align:center">${title}</h1><button class="btn icon" id="cNextP">›</button>
-    <button class="btn ghost" id="cToday">Сегодня</button>
-    <div class="seg" id="cView"><button data-c="month" class="${V.cal==='month'?'on':''}">Месяц</button><button data-c="year" class="${V.cal==='year'?'on':''}">Год</button></div>
-    <span class="sp"></span>${extra}<button class="btn pri" id="cAddEv">+ Событие</button></div>`;
+function calHead(title, sub, isCurrent, extra=''){
+  return `<div class="phead" id="cHead">
+    <button class="nav" id="cPrevP" aria-label="Назад">‹</button>
+    <div class="ptitle"><h1>${title}</h1><div class="psub">${sub}${isCurrent ? '' : '<button id="cToday">к сегодня</button>'}${extra}</div></div>
+    <button class="nav" id="cNextP" aria-label="Вперёд">›</button></div>
+  <div class="calbar"><div class="segfull" id="cView"><button data-c="month" class="${V.cal==='month'?'on':''}">Месяц</button><button data-c="year" class="${V.cal==='year'?'on':''}">Год</button></div>
+    <button class="btn" id="cAddEv">+ Событие</button></div>`;
 }
-function bindCalHead(prev, next, addDate){
+function bindCalHead(prev, next, addDate, swipeEl){
   $('#cPrevP').onclick = prev; $('#cNextP').onclick = next;
-  $('#cToday').onclick = () => { V.calMonth = monthKey(today()); V.calYear = today().getFullYear(); renderCal(); };
+  if ($('#cToday')) $('#cToday').onclick = () => { V.calMonth = monthKey(today()); V.calYear = today().getFullYear(); V.yearScroll = null; renderCal(); };
   $$('#cView button').forEach(b => b.onclick = () => { V.cal = b.dataset.c; V.yearScroll = null; if (V.cal==='year') V.calYear = +V.calMonth.slice(0,4); renderCal(); });
   $('#cAddEv').onclick = () => openEvent({from: addDate});
+  addSwipe($('#cHead'), next, prev);
+  if (swipeEl) addSwipe(swipeEl, next, prev);
 }
 function renderMonth(){
   const [y, mo] = V.calMonth.split('-').map(Number);
@@ -1477,21 +1638,21 @@ function renderMonth(){
       wsum += n;
       const list = n ? dayEntries(d) : [];
       html += `<div class="mc ${d.getMonth()!==mo-1?'out':''} ${ds===tds?'today':''} ${i>=5?'wkend':''} ${off?'hatch':''}" data-ds="${ds}">
-        <div class="mh"><span class="dn">${d.getDate()}</span>${n?`<span class="mn">${n}<span class="zan"> ${plural(n,'ребёнок','ребёнка','детей')}</span></span>`:''}<button class="add" data-add="${ds}" title="Добавить событие">+</button></div>
+        <div class="mh"><span class="dn">${d.getDate()}</span>${n?`<span class="mn" title="${n} ${plural(n,'ребёнок','ребёнка','детей')}">${n}<span class="zan"> ${plural(n,'ребёнок','ребёнка','детей')}</span></span>`:''}<button class="add" data-add="${ds}" title="Добавить событие">+</button></div>
         ${evs.map(e=>`<div class="ev ${e.off?'off':''}" data-ev="${e.id}" title="${esc(evLine(e))}">${esc((e.time?e.time+' ':'')+e.title)}</div>`).join('')}
         ${V.calNames && list.length ? `<div class="ml">${list.map(x=>`<div><span>${x.t.slice(0,2)}</span> ${esc(x.txt)}</div>`).join('')}</div>` : ''}
       </div>`;
     }
     html += `<div class="ws" data-wk="${ymd(w)}" title="Открыть неделю">${wsum||''}</div>`;
   }
-  $('#main').innerHTML = calHead(monthName(V.calMonth), `<label class="row small muted no-print" style="gap:6px"><input type="checkbox" id="cNames" ${V.calNames?'checked':''}> Имена</label><span class="pill kpi">занятий ${total}</span>`) +
+  $('#main').innerHTML = calHead(monthName(V.calMonth), `<span class="k">${total} ${plural(total,'занятие','занятия','занятий')}</span>`, V.calMonth===monthKey(today()), `<button id="cNames" class="desk-only">${V.calNames?'скрыть имена':'показать имена'}</button>`) +
     `<div class="mgrid">${html}</div>
     ${evMonth.length?`<section class="card"><h3>События месяца</h3><table class="t"><tbody>${evMonth.map(e=>`<tr class="click" data-ev="${e.id}"><td>${esc(evDates(e))}${e.time?', '+esc(e.time):''}</td><td>${esc(e.title)}${e.off?' <span class="pill">приёма нет</span>':''}</td><td class="muted">${esc(e.note||'')}</td></tr>`).join('')}</tbody></table></section>`:''}
-    <div class="hint">Нажмите на день, чтобы открыть его неделю; «+» в углу дня — добавить событие; Σ — занятий за неделю.</div>`;
+    <div class="hint" style="text-align:center">Нажмите на день — откроется карточка дня. Листать месяцы можно стрелками или свайпом. Σ — занятий за неделю.</div>`;
   const shift = k => { const d = new Date(y, mo-1+k, 1); V.calMonth = monthKey(d); renderMonth(); };
   const defDate = V.calMonth===monthKey(today()) ? tds : ymd(first);
-  bindCalHead(() => shift(-1), () => shift(1), defDate);
-  $('#cNames').onchange = e => { V.calNames = e.target.checked; renderMonth(); };
+  bindCalHead(() => shift(-1), () => shift(1), defDate, $('.mgrid'));
+  $('#cNames').onclick = () => { V.calNames = !V.calNames; renderMonth(); };
   bindCalClicks();
 }
 function bindCalClicks(){
@@ -1521,7 +1682,7 @@ function renderYear(){
     months += `<div class="card ym ${monthKey(first)===monthKey(today())?'cur':''}" id="ym-${mo}"><h3 data-month="${monthKey(first)}">${MN[mo]} <small>${ms?ms+' зан.':''}${ne?' · событий '+ne:''}</small></h3><div class="yd">${cells}</div></div>`;
   }
   const evYear = eventsBetween(y+'-01-01', y+'-12-31');
-  $('#main').innerHTML = calHead(String(y), `<span class="pill kpi">занятий ${total}</span>`) + `
+  $('#main').innerHTML = calHead(String(y), `<span class="k">${total} ${plural(total,'занятие','занятия','занятий')}</span>`, y===today().getFullYear()) + `
     <div class="legend" style="margin-top:12px"><span>Цифра в клетке — сколько детей было в этот день. Цвет:</span><span><i class="q1" style="background:var(--q1)"></i>1–4</span><span><i style="background:var(--q2)"></i>5–7</span><span><i style="background:var(--q3)"></i>8–9</span><span><i style="background:var(--q4)"></i>10+</span>
       <span><i style="background:none;box-shadow:inset 0 0 0 2px var(--ev)"></i>событие</span><span><i class="hatch"></i>приёма нет</span></div>
     <div class="ygrid">${months}</div>
@@ -1529,7 +1690,7 @@ function renderYear(){
       ${evYear.length?`<table class="t" style="margin-top:8px"><tbody>${evYear.map(e=>`<tr class="click" data-ev="${e.id}"><td>${esc(evDates(e))}${e.time?', '+esc(e.time):''}</td><td>${esc(e.title)}${e.off?' <span class="pill">приёма нет</span>':''}</td><td class="muted">${esc(e.note||'')}</td></tr>`).join('')}</tbody></table>`:'<div class="muted small" style="margin-top:6px">Пока нет. Добавьте, например, конференцию или новогодние выходные кнопкой «+ Событие».</div>'}
     </section>
     <div class="ytip" id="ytip"></div>`;
-  bindCalHead(() => { V.calYear--; renderYear(); }, () => { V.calYear++; renderYear(); }, y===today().getFullYear() ? tds : y+'-01-01');
+  bindCalHead(() => { V.calYear--; renderYear(); }, () => { V.calYear++; renderYear(); }, y===today().getFullYear() ? tds : y+'-01-01', $('.ygrid'));
   bindCalClicks();
   const tip = $('#ytip');
   $('.ygrid').onmousemove = e => {
@@ -1871,6 +2032,10 @@ function showImportDialog(res, fname){
 /* ============ start ============ */
 load();
 render();
+if (V.updatedFrom){
+  const nW = Object.keys(S.weeks).length, nE = Object.values(S.weeks).reduce((a,w)=>a+entries(w).length,0);
+  toast(`Приложение обновлено. Данные на месте: ${nW} ${plural(nW,'неделя','недели','недель')}, ${nE} ${plural(nE,'запись','записи','записей')}`);
+}
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
   const l1 = document.createElement('link'); l1.rel = 'manifest'; l1.href = 'manifest.webmanifest'; document.head.appendChild(l1);
   const l2 = document.createElement('link'); l2.rel = 'apple-touch-icon'; l2.href = 'icon-180.png'; document.head.appendChild(l2);
