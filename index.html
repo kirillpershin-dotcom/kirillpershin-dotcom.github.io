@@ -14,14 +14,14 @@
   --bg:#fafaf8; --panel:#ffffff; --ink:#1c1c1e; --ink2:#55565b; --muted:#8a8b90;
   --line:#e6e6e3; --line2:#f0f0ed; --accent:#2f62c9; --accent-soft:#e8eefb;
   --warn:#a35a00; --warn-soft:#fdf3e4; --same:#fff4c2; --today:#f3f6fd; --bad:#b3261e;
-  --ev:#6b46c1; --ev-soft:#efe9fb; --q1:#dbe5f8; --q2:#a9c1ef; --q3:#6f97e2; --q4:#2f62c9; --hatch:#e9e9e5;
+  --ev:#7357c4; --ev-soft:#f1ecfb; --ev-ring:#c9b8f0; --off-bg:#fdf1e9; --off-bg2:#f9e0d0; --off-ink:#a35f3c; --q1:#dbe5f8; --q2:#a9c1ef; --q3:#6f97e2; --q4:#2f62c9; --hatch:#e9e9e5;
   --r:10px;
 }
 @media (prefers-color-scheme: dark){
   :root{ --bg:#141416; --panel:#1c1c1f; --ink:#ececee; --ink2:#b4b5ba; --muted:#86878d;
     --line:#2e2e32; --line2:#26262a; --accent:#7aa5f2; --accent-soft:#1f2a40;
     --warn:#e5a34b; --warn-soft:#33270f; --same:#4a3f12; --today:#1b2233; --bad:#f2867e;
-    --ev:#b59af0; --ev-soft:#2c2442; --q1:#22304b; --q2:#2f4c80; --q3:#4a74c4; --q4:#86adf4; --hatch:#2c2c30; }
+    --ev:#c3adf5; --ev-soft:#2d2640; --ev-ring:#6f5aa8; --off-bg:#33261f; --off-bg2:#45322a; --off-ink:#efbd9d; --q1:#22304b; --q2:#2f4c80; --q3:#4a74c4; --q4:#86adf4; --hatch:#2c2c30; }
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
@@ -158,9 +158,11 @@ hr{border:0;border-top:1px solid var(--line);margin:16px 0}
 .lbl{width:48px;font-size:13px;color:var(--muted)}
 .evstrip{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;align-items:center}
 .evchip{border:0;background:var(--ev-soft);color:var(--ev);border-radius:999px;padding:3px 11px;font-size:13px}
-.hatch,.evchip.off,.ev.off,td.off,th.off{background:repeating-linear-gradient(135deg,var(--hatch) 0 5px,transparent 5px 10px)}
-.evchip.off,.ev.off{color:var(--ink2)}
-.mc .ev.off,.evchip.off{background:var(--panel);box-shadow:inset 0 0 0 1px var(--line)}
+.hatch,td.off,th.off{background:var(--off-bg)}
+.evchip.off,.ev.off{background:var(--off-bg2)}
+.evchip.off,.ev.off{color:var(--off-ink)}
+th.off .offlbl{color:var(--off-ink)}
+.mc .ev.off{background:var(--off-bg2)}
 .dayhd{border:0;background:none;padding:0;font-weight:600;cursor:pointer;text-align:left}
 .dayhd:hover{text-decoration:underline}
 .offlbl{display:block;font-weight:500;font-size:12px;color:var(--ink2)}
@@ -196,7 +198,7 @@ hr{border:0;border-top:1px solid var(--line);margin:16px 0}
 .yd .c.q1{background:var(--q1)} .yd .c.q2{background:var(--q2)} .yd .c.q3{background:var(--q3);color:#fff} .yd .c.q4{background:var(--q4);color:#fff}
 @media (prefers-color-scheme: dark){.yd .c.q3,.yd .c.q4{color:#0e1420}}
 .yd .c.off{color:var(--ink2)}
-.yd .c.hasev{box-shadow:inset 0 0 0 2px var(--ev)}
+.yd .c.hasev{box-shadow:inset 0 0 0 2px var(--ev-ring)}
 .yd .c.td{outline:2px solid var(--ink);outline-offset:1px}
 .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
 .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px;background:var(--line2)}
@@ -233,7 +235,6 @@ td:hover .snd.on,td:focus-within .snd.on{display:flex}
   .weekhead.wk #wShare{margin-left:auto}
   .weekhead.wk .acts .btn{padding:8px 11px}
   .titlepick input{display:block;position:absolute;inset:0;opacity:0;width:100%;height:100%}
-  .titlepick::after{content:" ▾";font-size:12px;color:var(--muted)}
   .daytabs{position:sticky;top:0;z-index:10;background:var(--bg);padding:8px 0 6px;margin-top:4px}
   .daytabs button{padding:8px 4px}
   .daylist{margin-top:4px}
@@ -284,7 +285,7 @@ main,section,.card{min-width:0}
 .ptitle .titlepick{position:relative;display:inline-block;max-width:100%;cursor:pointer}
 .ptitle .titlepick input{display:block;position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
 .ptitle .titlepick h1{display:inline}
-.ptitle .titlepick::after{content:" ▾";font-size:12px;color:var(--muted)}
+.ptitle .titlepick::after{content:"▾";position:absolute;left:100%;top:50%;transform:translateY(-45%);margin-left:4px;font-size:12px;color:var(--muted)}
 .psub{font-size:13px;color:var(--muted);margin-top:2px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .psub button{border:0;background:none;padding:0;color:var(--accent);font-size:13px}
 .psub .k{color:var(--ink2)}
@@ -292,7 +293,7 @@ main,section,.card{min-width:0}
 .notes-ev{margin:10px auto 0;max-width:640px;display:grid;gap:4px}
 .notes-ev button{display:flex;gap:8px;align-items:center;border:0;background:none;padding:2px 4px;text-align:left;font-size:13px;color:var(--ink2);min-width:0}
 .notes-ev i{flex:none;width:7px;height:7px;border-radius:50%;background:var(--ev)}
-.notes-ev i.off{background:var(--muted)}
+.notes-ev i.off{background:var(--off-ink)}
 .notes-ev span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 /* спокойная панель действий */
 .tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px auto 0;max-width:640px}
@@ -341,9 +342,15 @@ main,section,.card{min-width:0}
   .ptitle h1{font-size:19px}
 }
 @media (min-width:761px){ .mh .zan{display:inline} }
-.yd .c.hatch{background:repeating-linear-gradient(135deg,var(--hatch) 0 4px,transparent 4px 8px);box-shadow:inset 0 0 0 1px var(--line)}
+.yd .c.hatch{background:var(--off-bg2);color:var(--off-ink)}
 .notes-ev{justify-items:center}
 .notes-ev button{max-width:100%}
+.acc-tiles .tile.tot{background:var(--accent-soft);border-color:transparent}
+.acc-tiles .tile.tot .val{color:var(--accent)}
+nav.tabs button{position:relative}
+.sdot{position:absolute;top:4px;right:calc(50% - 18px);width:8px;height:8px;border-radius:50%;background:transparent}
+.sdot.ok{background:#3aa765}.sdot.busy{background:var(--accent)}.sdot.offline{background:#b8b8bd}.sdot.err{background:var(--bad)}
+@media (min-width:761px){.sdot{top:2px;right:0}}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
 </style>
 </head>
@@ -355,7 +362,7 @@ main,section,.card{min-width:0}
     <button data-v="cal"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Календарь</span></button>
     <button data-v="acc"><svg viewBox="0 0 24 24"><path d="M17 5H7l6 7-6 7h10"/></svg><span>Учёт</span></button>
     <button data-v="stats"><svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-7"/></svg><span>Статистика</span></button>
-    <button data-v="data"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg><span>Данные</span></button>
+    <button data-v="data"><svg viewBox="0 0 24 24"><path d="M12 4v11m0 0l-4-4m4 4l4-4M5 20h14"/></svg><span>Данные</span><i class="sdot" id="sdot"></i></button>
   </nav>
 </div></header>
 <div class="wrap">
@@ -368,7 +375,7 @@ main,section,.card{min-width:0}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-08.3';
+const APP_VERSION = '2026-11-08.4';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -442,6 +449,7 @@ function load(){
   S.settings = Object.assign({}, DEFAULTS, S.settings || {});
   if (!Array.isArray(S.events)) S.events = [];
   migrate();
+  initStamp();
   const prevV = S.settings.appVersion;
   if (prevV !== APP_VERSION){
     // перед любым обновлением версии сохраняем полную копию данных в этом же браузере
@@ -456,7 +464,7 @@ function persist(){
   try { localStorage.setItem(KEY, JSON.stringify(S)); storageOK = true; }
   catch(e){ storageOK = false; }
 }
-function save(){ S.updatedAt = Date.now(); persist(); renderBanner(); clearTimeout(save._t); save._t = setTimeout(dailySnapshot, 2000); }
+function save(){ S.updatedAt = Date.now(); const ch = stampChanges(); persist(); renderBanner(); clearTimeout(save._t); save._t = setTimeout(dailySnapshot, 2000); if (ch) syncSoon(); }
 /* автокопии: одна на каждый день работы, последние 14 дней, хранятся в этом же браузере */
 function dailySnapshots(){ try { return JSON.parse(localStorage.getItem(KEY+'-daily') || '[]'); } catch(e){ return []; } }
 function dailySnapshot(){
@@ -742,9 +750,10 @@ function renderWeek(){
   bindTitlePick($('#wHead'));
   addSwipe($('#wHead'), () => go('week', {week: ymd(addDays(mon,7)), day: V.day}), () => go('week', {week: prevKey, day: V.day}));
   addSwipe($('.gridwrap'), () => go('week', {week: ymd(addDays(mon,7))}), () => go('week', {week: prevKey}));
+  addSwipe($('#dayTabs'), () => go('week', {week: ymd(addDays(mon,7)), day: V.day}), () => go('week', {week: prevKey, day: V.day}));
   $$('.wDate').forEach(inp => inp.onchange = e => { if (e.target.value){ const d = pdate(e.target.value), i = (d.getDay()+6)%7; go('week', {week: ymd(mondayOf(d)), day: i < S.settings.days ? i : 0}); } });
   $('#wCopy').onclick = copyPrevWeek;
-  $('#wN').onclick = () => go('acc', {accWeek: key});
+  $('#wN').onclick = () => go('acc', {accWeek: key, accMonth: weekMonth(key)});
   $('#wShare').onclick = () => openSend({mode:'week', week:key, day:V.day});
   $('#wCopyTo').onclick = () => openCopy();
   $('#wEv').onclick = () => openEvent({from: ymd(dates[V.day] || mon)});
@@ -864,9 +873,9 @@ function renderCalc(){
   const cnt = weekCount(w);
   const over = w && w.n != null;
   $('#calcCard').innerHTML = `
-    <div class="row"><button class="btn icon" id="aPrev" title="Предыдущая неделя">‹</button><h2 style="margin:0;min-width:200px;text-align:center">${weekTitle(key, S.settings.days)}</h2><button class="btn icon" id="aNext" title="Следующая неделя">›</button>
-      <button class="btn ghost" id="aOpen">Открыть расписание</button><span class="sp"></span>
-      <span class="small muted">N = <b class="kpi" id="cN">${weekN(w)}</b> ${over?`<span class="pill warn">вручную, по расписанию ${weekdayCount(w)}</span>`:'(Пн–Пт)'} · СБ = <b class="kpi">${satCount(w)}</b></span></div>
+    <h3 style="text-align:center;margin-bottom:8px">Расчёт недели</h3>
+    <div class="navrow"><button class="nav" id="aPrev" aria-label="Предыдущая неделя">‹</button><b class="trunc">${weekTitle(key, S.settings.days)}</b><button class="nav" id="aNext" aria-label="Следующая неделя">›</button></div>
+    <div class="psub" style="margin-top:6px"><span>N = <b class="kpi" id="cN">${weekN(w)}</b> ${over?`<span class="pill warn">вручную, по расписанию ${weekdayCount(w)}</span>`:'(Пн–Пт)'} · СБ = <b class="kpi">${satCount(w)}</b></span><button id="aOpen">открыть расписание</button></div>
     ${over ? `<div class="hint flag">${esc(w.nNote||'N задано вручную')}: в исходной таблице стояло ${w.n}, а записей в сетке ${weekdayCount(w)}. <button class="btn" id="cUseCnt">Считать по расписанию (${weekdayCount(w)})</button></div>` : ''}
     <div class="calc" style="margin-top:12px">
       <div class="h"></div><div class="h nmh">Название</div><div class="h">Формула</div><div class="h" style="text-align:right">Результат</div><div></div>
@@ -888,10 +897,11 @@ function renderCalc(){
   $$('#calcCard input').forEach(inp => inp.addEventListener('input', () => {
     const ww = touch(); ww.calc[+inp.dataset.i][inp.dataset.k] = inp.value; save(); updateCalcResults(); refreshAccTables();
   }));
-  $('#aPrev').onclick = () => { V.accWeek = ymd(addDays(pdate(key),-7)); renderCalc(); };
-  $('#aNext').onclick = () => { V.accWeek = ymd(addDays(pdate(key),7)); renderCalc(); };
+  const moveW = d => { V.accWeek = ymd(addDays(pdate(key), d)); if (weekMonth(V.accWeek) !== V.accMonth){ V.accMonth = weekMonth(V.accWeek); renderAcc(); } else { renderCalc(); $$('#accWeeks tr[data-w]').forEach(x => x.classList.toggle('sel', x.dataset.w===V.accWeek)); } };
+  $('#aPrev').onclick = () => moveW(-7);
+  $('#aNext').onclick = () => moveW(7);
   $('#aOpen').onclick = () => go('week', {week: key, day: null});
-  $$('#accTables tr[data-w]').forEach(tr => tr.classList.toggle('sel', tr.dataset.w===key));
+
   $$('#calcCard [data-del]').forEach(b => b.onclick = () => {
     const ww = touch(); const i = +b.dataset.del;
     if (!confirm(`Удалить строку ${letter(i)}? Буквы строк ниже сдвинутся.`)) return;
@@ -1033,50 +1043,69 @@ function renameKid(kid, newName){
 }
 
 /* ============ ACCOUNTING ============ */
+function accWeeks(m){ return Object.keys(S.weeks).filter(k => weekMonth(k)===m && (entries(S.weeks[k]).length || S.weeks[k].calc)).sort(); }
+function accAgg(ks){
+  const names = [], rows = ks.map(k => {
+    const w = S.weeks[k], res = calcWeek(w), vals = {};
+    (w.calc||[]).forEach((l,i) => { const nm = l.name || letter(i); if (!names.includes(nm)) names.push(nm); vals[nm] = res[i]; });
+    return {k, w, vals};
+  });
+  const sumN = rows.reduce((a,r)=>a+weekN(r.w),0), sumSat = rows.reduce((a,r)=>a+satCount(r.w),0);
+  const sums = {}; names.forEach(n => sums[n] = rows.reduce((a,r)=> a + (r.vals[n] && !r.vals[n].err ? r.vals[n].v : 0), 0));
+  return {names, rows, sumN, sumSat, sums};
+}
 function renderAcc(){
+  const curW = ymd(mondayOf(today()));
+  if (!V.accMonth) V.accMonth = weekMonth(V.accWeek || curW);
+  const m = V.accMonth, ks = accWeeks(m);
+  if (!V.accWeek || weekMonth(V.accWeek)!==m) V.accWeek = ks.includes(curW) ? curW : (ks[ks.length-1] || (() => { const [y,mm] = m.split('-').map(Number); let d = mondayOf(new Date(y, mm-1, 1)); while (weekMonth(ymd(d))!==m) d = addDays(d,7); return ymd(d); })());
+  const shift = k => { const [y,mm] = m.split('-').map(Number); V.accMonth = monthKey(new Date(y, mm-1+k, 1)); V.accWeek = null; renderAcc(); };
   const t = S.settings.template;
-  if (!V.accWeek){ const t0 = today(), m0 = mondayOf(t0); V.accWeek = ymd(m0); }
   $('#main').innerHTML = `
-  <div class="row" style="margin-top:18px"><h1>Учёт по неделям</h1><span class="sp"></span>
-    <span class="small muted">Шаблон для новых недель: ${t.map((l,i)=>`<span class="mono">${letter(i)} = ${esc(l.f)}</span>`).join(' · ')}</span>
-    <button class="btn ghost" onclick="go('data')">Изменить</button></div>
+  <div class="phead" id="aHead"><button class="nav" id="amPrev" aria-label="Предыдущий месяц">‹</button>
+    <div class="ptitle"><h1>Учёт · ${monthName(m)}</h1><div class="psub"><span class="k">${ks.length} ${plural(ks.length,'неделя','недели','недель')}</span>${m!==weekMonth(curW)?'<button id="amNow">к текущему месяцу</button>':''}</div></div>
+    <button class="nav" id="amNext" aria-label="Следующий месяц">›</button></div>
+  <div id="accTop"></div>
+  <section class="card"><div class="row"><h3 style="margin:0">Недели месяца</h3><span class="sp"></span><span class="small muted">нажмите, чтобы открыть расчёт</span></div><div id="accWeeks"></div></section>
   <section class="card" id="calcCard"></section>
-  <div class="hint">Ниже — все недели по месяцам. Неделя относится к месяцу, в котором её четверг. Нажмите на неделю, чтобы открыть её расчёт.</div>
-  <div id="accTables"></div>`;
+  <section class="card"><div class="row"><h3 style="margin:0">Итоги по месяцам ${m.slice(0,4)}</h3></div><div id="accYear"></div></section>
+  <div class="hint" style="text-align:center">Шаблон для новых недель: ${t.map((l,i)=>`<span class="mono">${letter(i)} = ${esc(l.f)}</span>`).join(' · ')} · <a href="#" id="amTpl">изменить</a>. Неделя относится к месяцу, в котором её четверг.</div>`;
+  $('#amPrev').onclick = () => shift(-1); $('#amNext').onclick = () => shift(1);
+  if ($('#amNow')) $('#amNow').onclick = () => { V.accMonth = weekMonth(curW); V.accWeek = null; renderAcc(); };
+  $('#amTpl').onclick = e => { e.preventDefault(); go('data'); };
+  addSwipe($('#aHead'), () => shift(1), () => shift(-1));
   refreshAccTables(true);
   renderCalc();
 }
 function refreshAccTables(now){
   clearTimeout(refreshAccTables._t);
   const run = () => {
-    const box = $('#accTables'); if (!box) return;
-    const keys = Object.keys(S.weeks).filter(k => entries(S.weeks[k]).length || S.weeks[k].calc).sort().reverse();
-    const months = {}; keys.forEach(k => (months[weekMonth(k)] ||= []).push(k));
-    box.innerHTML = Object.entries(months).map(([m, ks]) => monthBlock(m, ks)).join('');
-    $$('#accTables tr[data-w]').forEach(tr => { tr.classList.toggle('sel', tr.dataset.w===V.accWeek);
-      tr.onclick = () => { V.accWeek = tr.dataset.w; renderCalc(); $('#calcCard').scrollIntoView({behavior:'smooth', block:'start'}); }; });
+    if (!$('#accTop')) return;
+    const m = V.accMonth, ks = accWeeks(m), A = accAgg(ks), curW = ymd(mondayOf(today()));
+    const isTotal = n => /итог/i.test(n);
+    $('#accTop').innerHTML = `<section class="tiles acc-tiles">
+      ${tile('Занятий Пн–Пт', fmtNum(A.sumN), 'N за месяц')}
+      ${A.sumSat ? tile('Суббота', fmtNum(A.sumSat), 'занятий') : ''}
+      ${A.names.map(n => `<div class="tile ${isTotal(n)?'tot':''}"><div class="k">${esc(n)}</div><div class="val">${fmtMoney(A.sums[n])}</div><div class="s">за месяц</div></div>`).join('')}
+    </section>`;
+    $('#accWeeks').innerHTML = ks.length ? `<div class="tscroll"><table class="t" style="margin-top:6px"><thead><tr><th>Неделя</th><th class="n">Пн–Пт</th><th class="n">Сб</th>${A.names.map(n=>`<th class="n">${esc(n)}</th>`).join('')}</tr></thead>
+      <tbody>${A.rows.map(r => { const over = r.w.n!=null; return `<tr class="click ${r.k===V.accWeek?'sel':''}" data-w="${r.k}"><td class="nw">${weekShort(r.k)}${r.k===curW?' <span class="pill">идёт</span>':r.k>curW?' <span class="pill">план</span>':''}${!r.w.calc?' <span class="pill warn">нет расчёта</span>':''}</td>
+        <td class="n">${over?`<span class="flag" title="Вручную; по расписанию ${weekdayCount(r.w)}">${r.w.n} ⚠</span>`:weekdayCount(r.w)}</td><td class="n">${satCount(r.w)||''}</td>
+        ${A.names.map(n=>{const v=r.vals[n]; return `<td class="n">${!v?'':v.err?'<span class="flag">ошибка</span>':fmtMoney(v.v)}</td>`;}).join('')}</tr>`; }).join('')}</tbody>
+      <tfoot><tr><td>Итого за месяц</td><td class="n">${A.sumN}</td><td class="n">${A.sumSat||''}</td>${A.names.map(n=>`<td class="n">${fmtMoney(A.sums[n])}</td>`).join('')}</tr></tfoot></table></div>`
+      : '<div class="muted small" style="padding:8px 0">В этом месяце пока нет недель с занятиями.</div>';
+    $$('#accWeeks tr[data-w]').forEach(tr => tr.onclick = () => { V.accWeek = tr.dataset.w; renderCalc(); $$('#accWeeks tr[data-w]').forEach(x => x.classList.toggle('sel', x===tr)); $('#calcCard').scrollIntoView({behavior:'smooth', block:'start'}); });
+    // год
+    const y = m.slice(0,4), months = [...new Set(Object.keys(S.weeks).map(weekMonth))].filter(x => x.startsWith(y)).sort();
+    const yr = months.map(mk => ({mk, A: accAgg(accWeeks(mk))})).filter(x => x.A.rows.length);
+    const ynames = []; yr.forEach(x => x.A.names.forEach(n => { if (!ynames.includes(n)) ynames.push(n); }));
+    const tot = {N:0, Sat:0}; ynames.forEach(n => tot[n] = 0); yr.forEach(x => { tot.N += x.A.sumN; tot.Sat += x.A.sumSat; ynames.forEach(n => tot[n] += x.A.sums[n]||0); });
+    $('#accYear').innerHTML = yr.length ? `<div class="tscroll"><table class="t" style="margin-top:6px"><thead><tr><th>Месяц</th><th class="n">Пн–Пт</th><th class="n">Сб</th>${ynames.map(n=>`<th class="n">${esc(n)}</th>`).join('')}</tr></thead>
+      <tbody>${yr.map(x => `<tr class="click ${x.mk===m?'sel':''}" data-m="${x.mk}"><td class="nw">${MN[+x.mk.slice(5)-1]}</td><td class="n">${x.A.sumN}</td><td class="n">${x.A.sumSat||''}</td>${ynames.map(n=>`<td class="n">${x.A.sums[n]!=null?fmtMoney(x.A.sums[n]):''}</td>`).join('')}</tr>`).join('')}</tbody>
+      <tfoot><tr><td>За ${y} год</td><td class="n">${tot.N}</td><td class="n">${tot.Sat||''}</td>${ynames.map(n=>`<td class="n">${fmtMoney(tot[n])}</td>`).join('')}</tr></tfoot></table></div>` : '<div class="muted small">Нет данных</div>';
+    $$('#accYear tr[data-m]').forEach(tr => tr.onclick = () => { V.accMonth = tr.dataset.m; V.accWeek = null; renderAcc(); window.scrollTo({top:0, behavior:'smooth'}); });
   };
   if (now) run(); else refreshAccTables._t = setTimeout(run, 400);
-}
-function monthBlock(m, ks){
-  const names = [];
-  const rows = ks.map(k => {
-    const w = S.weeks[k], res = calcWeek(w), vals = {};
-    (w.calc||[]).forEach((l,i) => { const nm = l.name || letter(i); if (!names.includes(nm)) names.push(nm); vals[nm] = res[i]; });
-    return {k, w, vals};
-  });
-  const curW = ymd(mondayOf(today()));
-  const sumN = rows.reduce((a,r)=>a+weekN(r.w),0);
-  const sums = {}; names.forEach(n => sums[n] = rows.reduce((a,r)=> a + (r.vals[n] && !r.vals[n].err ? r.vals[n].v : 0), 0));
-  return `<section class="card"><div class="row"><h2 style="margin:0">${monthName(m)}</h2><span class="sp"></span><span class="pill kpi">занятий ${sumN}</span></div>
-  <div class="tscroll"><table class="t" style="margin-top:8px"><thead><tr><th>Неделя</th><th class="n">N</th>${names.map(n=>`<th class="n">${esc(n)}</th>`).join('')}</tr></thead>
-  <tbody>${rows.map(r=>{
-    const cnt = weekCount(r.w), over = r.w.n!=null;
-    return `<tr class="click" data-w="${r.k}"><td>${weekShort(r.k)}${r.k===curW?' <span class="pill">идёт</span>':r.k>curW?' <span class="pill">план</span>':''}${!r.w.calc?' <span class="pill warn">нет расчёта</span>':''}</td>
-      <td class="n">${over?`<span class="flag" title="В исходной таблице ${r.w.n}, по расписанию ${cnt}">${r.w.n} ⚠</span>`:cnt}</td>
-      ${names.map(n=>{const v=r.vals[n]; return `<td class="n">${!v?'':v.err?'<span class="flag">ошибка</span>':fmtMoney(v.v)}</td>`;}).join('')}</tr>`;}).join('')}</tbody>
-  ${rows.length>1?`<tfoot><tr><td>Итого</td><td class="n">${sumN}</td>${names.map(n=>`<td class="n">${fmtMoney(sums[n])}</td>`).join('')}</tr></tfoot>`:''}
-  </table></div></section>`;
 }
 
 /* ============ STATS ============ */
@@ -1233,6 +1262,7 @@ function renderData(){
   const allNames = [...new Set(Object.values(S.weeks).flatMap(w=>(w.calc||[]).map(l=>l.name).filter(Boolean)))].sort();
   $('#main').innerHTML = `
   <h1 style="margin-top:18px">Данные</h1>
+  ${syncCardHTML()}
   <section class="card">
     <h3>Загрузить расписание</h3>
     <div class="row"><label class="btn pri" style="cursor:pointer">Выбрать файл…<input type="file" id="iFile" accept=".xlsx,.csv,.html,.htm,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/html,application/json" style="display:none"></label>
@@ -1295,6 +1325,7 @@ function renderData(){
   $('#eJson').onclick = exportJSON;
   $('#eApp').onclick = exportApp;
   bindInstall($('#instCard'));
+  bindSyncCard();
   if ($('#puBack')) $('#puBack').onclick = () => { const pu = JSON.parse(localStorage.getItem(KEY+'-preupdate')); if (!confirm('Вернуть данные к состоянию перед обновлением ('+fmtDT(pu.at)+')?')) return;
     snapshot('Возврат к копии перед обновлением'); S = pu.data; S.settings = Object.assign({}, DEFAULTS, S.settings||{}, {appVersion: APP_VERSION}); if (!Array.isArray(S.events)) S.events = []; migrate(); dirty(); save(); renderData(); toast('Готово', {label:'Отменить', fn: undoLast}); };
   $$('[data-snap]').forEach(b => b.onclick = () => { const x = dailySnapshots()[+b.dataset.snap]; if (!x || !confirm('Вернуть расписание к состоянию на '+fmtDT(x.at)+'? Текущее состояние можно будет вернуть кнопкой «Отменить».')) return;
@@ -1647,7 +1678,7 @@ function renderMonth(){
   }
   $('#main').innerHTML = calHead(monthName(V.calMonth), `<span class="k">${total} ${plural(total,'занятие','занятия','занятий')}</span>`, V.calMonth===monthKey(today()), `<button id="cNames" class="desk-only">${V.calNames?'скрыть имена':'показать имена'}</button>`) +
     `<div class="mgrid">${html}</div>
-    ${evMonth.length?`<section class="card"><h3>События месяца</h3><table class="t"><tbody>${evMonth.map(e=>`<tr class="click" data-ev="${e.id}"><td>${esc(evDates(e))}${e.time?', '+esc(e.time):''}</td><td>${esc(e.title)}${e.off?' <span class="pill">приёма нет</span>':''}</td><td class="muted">${esc(e.note||'')}</td></tr>`).join('')}</tbody></table></section>`:''}
+    ${evMonth.length?`<section class="card"><h3>События месяца</h3><table class="t"><tbody>${evMonth.map(e=>`<tr class="click" data-ev="${e.id}"><td class="nw">${esc(evDates(e))}${e.time?', '+esc(e.time):''}</td><td>${esc(e.title)}${e.off?' <span class="pill">приёма нет</span>':''}</td><td class="muted">${esc(e.note||'')}</td></tr>`).join('')}</tbody></table></section>`:''}
     <div class="hint" style="text-align:center">Нажмите на день — откроется карточка дня. Листать месяцы можно стрелками или свайпом. Σ — занятий за неделю.</div>`;
   const shift = k => { const d = new Date(y, mo-1+k, 1); V.calMonth = monthKey(d); renderMonth(); };
   const defDate = V.calMonth===monthKey(today()) ? tds : ymd(first);
@@ -1684,10 +1715,10 @@ function renderYear(){
   const evYear = eventsBetween(y+'-01-01', y+'-12-31');
   $('#main').innerHTML = calHead(String(y), `<span class="k">${total} ${plural(total,'занятие','занятия','занятий')}</span>`, y===today().getFullYear()) + `
     <div class="legend" style="margin-top:12px"><span>Цифра в клетке — сколько детей было в этот день. Цвет:</span><span><i class="q1" style="background:var(--q1)"></i>1–4</span><span><i style="background:var(--q2)"></i>5–7</span><span><i style="background:var(--q3)"></i>8–9</span><span><i style="background:var(--q4)"></i>10+</span>
-      <span><i style="background:none;box-shadow:inset 0 0 0 2px var(--ev)"></i>событие</span><span><i class="hatch"></i>приёма нет</span></div>
+      <span><i style="background:none;box-shadow:inset 0 0 0 2px var(--ev-ring)"></i>событие</span><span><i style="background:var(--off-bg2)"></i>приёма нет</span></div>
     <div class="ygrid">${months}</div>
     <section class="card"><div class="row"><h3 style="margin:0">События ${y}</h3></div>
-      ${evYear.length?`<table class="t" style="margin-top:8px"><tbody>${evYear.map(e=>`<tr class="click" data-ev="${e.id}"><td>${esc(evDates(e))}${e.time?', '+esc(e.time):''}</td><td>${esc(e.title)}${e.off?' <span class="pill">приёма нет</span>':''}</td><td class="muted">${esc(e.note||'')}</td></tr>`).join('')}</tbody></table>`:'<div class="muted small" style="margin-top:6px">Пока нет. Добавьте, например, конференцию или новогодние выходные кнопкой «+ Событие».</div>'}
+      ${evYear.length?`<table class="t" style="margin-top:8px"><tbody>${evYear.map(e=>`<tr class="click" data-ev="${e.id}"><td class="nw">${esc(evDates(e))}${e.time?', '+esc(e.time):''}</td><td>${esc(e.title)}${e.off?' <span class="pill">приёма нет</span>':''}</td><td class="muted">${esc(e.note||'')}</td></tr>`).join('')}</tbody></table>`:'<div class="muted small" style="margin-top:6px">Пока нет. Добавьте, например, конференцию или новогодние выходные кнопкой «+ Событие».</div>'}
     </section>
     <div class="ytip" id="ytip"></div>`;
   bindCalHead(() => { V.calYear--; renderYear(); }, () => { V.calYear++; renderYear(); }, y===today().getFullYear() ? tds : y+'-01-01', $('.ygrid'));
@@ -2029,9 +2060,243 @@ function showImportDialog(res, fname){
   };
 }
 
+
+/* ============ SYNC: закрытое хранилище GitHub ============ */
+/* У каждой недели и события — метка времени последнего изменения (u). Удаления запоминаются (tomb).
+   При синхронизации берётся более свежая версия каждой недели/события; данные при этом всегда есть и на устройстве. */
+let LJ = null;
+const cellsOf = w => { const m = {}; for (const i in (w.d||{})) for (const t in w.d[i]) { const v = w.d[i][t]; if (v && String(v).trim()) m[i+'|'+t] = v; } return m; };
+const fieldsJ = w => { const {u, cu, fu, d, ...r} = w; return JSON.stringify(r); };
+const eJ = e => { const {u, ...r} = e; return JSON.stringify(r); };
+const sharedSettings = () => ({template: S.settings.template, days: S.settings.days, satRate: S.settings.satRate, from: S.settings.from, to: S.settings.to});
+function initStamp(){
+  S.tomb = S.tomb || {}; S.evTomb = S.evTomb || {};
+  LJ = {c:{}, f:{}, e:{}, s: JSON.stringify(sharedSettings())};
+  for (const k in S.weeks){ LJ.c[k] = cellsOf(S.weeks[k]); LJ.f[k] = fieldsJ(S.weeks[k]); }
+  for (const e of evList()) LJ.e[e.id] = eJ(e);
+}
+function stampChanges(){
+  if (!LJ) initStamp();
+  S.tomb = S.tomb || {}; S.evTomb = S.evTomb || {};
+  const now = Date.now(); let ch = false;
+  for (const k in S.weeks){
+    const w = S.weeks[k], cur = cellsOf(w), prev = LJ.c[k] || {}; let chg = false;
+    for (const key of new Set([...Object.keys(cur), ...Object.keys(prev)])) if (cur[key] !== prev[key]){ (w.cu || (w.cu = {}))[key] = now; chg = true; }
+    const fj = fieldsJ(w); if (fj !== LJ.f[k]){ w.fu = now; chg = true; }
+    if (chg){ w.u = now; LJ.c[k] = cur; LJ.f[k] = fj; delete S.tomb[k]; ch = true; }
+  }
+  for (const k in LJ.c) if (!S.weeks[k]){ S.tomb[k] = now; delete LJ.c[k]; delete LJ.f[k]; ch = true; }
+  const ids = new Set();
+  for (const e of evList()){ ids.add(e.id); const j = eJ(e); if (LJ.e[e.id] !== j){ e.u = now; LJ.e[e.id] = j; delete S.evTomb[e.id]; ch = true; } }
+  for (const id in LJ.e) if (!ids.has(id)){ S.evTomb[id] = now; delete LJ.e[id]; ch = true; }
+  const sj = JSON.stringify(sharedSettings()); if (sj !== LJ.s){ S.settingsU = now; LJ.s = sj; ch = true; }
+  return ch;
+}
+function canon(o){
+  if (Array.isArray(o)) return '[' + o.map(canon).join(',') + ']';
+  if (o && typeof o === 'object') return '{' + Object.keys(o).filter(k => o[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(o[k])).join(',') + '}';
+  return JSON.stringify(o);
+}
+const sharedData = d => ({weeks: d.weeks || {}, events: [...(d.events || [])].sort((a,b) => a.id < b.id ? -1 : 1), tomb: d.tomb || {}, evTomb: d.evTomb || {}, settings: d.settings || null, settingsU: d.settingsU || 0});
+function localPayload(){ return {v: 2, weeks: S.weeks, events: evList(), tomb: S.tomb || {}, evTomb: S.evTomb || {}, settings: sharedSettings(), settingsU: S.settingsU || 0}; }
+function mergeData(L, R){
+  const out = {weeks:{}, events:[], tomb:{}, evTomb:{}};
+  for (const k of new Set([...Object.keys(L.tomb||{}), ...Object.keys(R.tomb||{})])) out.tomb[k] = Math.max((L.tomb||{})[k]||0, (R.tomb||{})[k]||0);
+  for (const k of new Set([...Object.keys(L.evTomb||{}), ...Object.keys(R.evTomb||{})])) out.evTomb[k] = Math.max((L.evTomb||{})[k]||0, (R.evTomb||{})[k]||0);
+  for (const k of new Set([...Object.keys(L.weeks||{}), ...Object.keys(R.weeks||{})])){
+    const w = mergeWeek((L.weeks||{})[k], (R.weeks||{})[k], out.tomb[k] || 0);
+    if (w) out.weeks[k] = w;
+  }
+  const ev = {}; [...(L.events||[]), ...(R.events||[])].forEach(e => { const c = ev[e.id]; if (!c || (e.u||0) > (c.u||0)) ev[e.id] = e; });
+  out.events = Object.values(ev).filter(e => !(out.evTomb[e.id] && out.evTomb[e.id] >= (e.u||0)));
+  const rs = (R.settingsU||0) > (L.settingsU||0);
+  out.settings = rs && R.settings ? R.settings : L.settings; out.settingsU = Math.max(L.settingsU||0, R.settingsU||0);
+  return out;
+}
+/* слияние недели по ячейкам: у каждой ячейки своё время изменения (cu), у остальных полей — fu */
+function mergeWeek(a, b, tomb){
+  if (!a && !b) return null;
+  const A = a || {d:{}}, B = b || {d:{}}, ca = cellsOf(A), cb = cellsOf(B), ta = A.cu || {}, tb = B.cu || {};
+  const d = {}, cu = {};
+  for (const key of new Set([...Object.keys(ca), ...Object.keys(cb), ...Object.keys(ta), ...Object.keys(tb)])){
+    const sa = ta[key] || 0, sb = tb[key] || 0, ts = Math.max(sa, sb);
+    const v = !a ? cb[key] : !b ? ca[key] : (sb > sa ? cb[key] : ca[key]);
+    if (ts) cu[key] = ts;
+    if (v != null && !(tomb && tomb >= ts)){ const [i, t] = key.split('|'); (d[i] || (d[i] = {}))[t] = v; }
+  }
+  const fa = A.fu || 0, fb = B.fu || 0, fuM = Math.max(fa, fb);
+  const src = !a ? B : !b ? A : (fb > fa ? B : A);
+  const {u, cu: _c, fu: _f, d: _d, ...fields} = src;
+  const w = Object.assign({}, tomb && tomb >= fuM ? {} : fields, {d, cu});
+  if (fuM) w.fu = fuM;
+  w.u = Math.max(A.u || 0, B.u || 0);
+  if (!Object.keys(d).length && !w.notes && !w.calcEdited && w.n == null) return null;
+  return w;
+}
+function applyShared(d){
+  S.weeks = d.weeks || {}; S.events = d.events || []; S.tomb = d.tomb || {}; S.evTomb = d.evTomb || {};
+  if (d.settings) Object.assign(S.settings, d.settings);
+  S.settingsU = d.settingsU || 0;
+  initStamp(); dirty(); persist();
+}
+const SYNC = {cfg: null, busy: false, again: false, state: 'off', last: 0, err: ''};
+function syncCfg(){ try { return JSON.parse(localStorage.getItem(KEY+'-sync') || 'null'); } catch(e){ return null; } }
+function setSyncCfg(c){ SYNC.cfg = c; try { c ? localStorage.setItem(KEY+'-sync', JSON.stringify(c)) : localStorage.removeItem(KEY+'-sync'); } catch(e){} }
+function deviceName(){ const u = navigator.userAgent; return /iPad/.test(u) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1) ? 'iPad' : /iPhone/.test(u) ? 'iPhone' : /Android/.test(u) ? 'Android' : /Mac/.test(u) ? 'Mac' : /Windows/.test(u) ? 'Windows' : 'устройство'; }
+const b64enc = str => { const by = new TextEncoder().encode(str); let bin = ''; for (let i = 0; i < by.length; i += 0x8000) bin += String.fromCharCode.apply(null, by.subarray(i, i + 0x8000)); return btoa(bin); };
+const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, '')), c => c.charCodeAt(0)));
+function ghHeaders(extra){ return Object.assign({Authorization: 'Bearer ' + SYNC.cfg.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}, extra || {}); }
+const ghUrl = () => `https://api.github.com/repos/${SYNC.cfg.repo}/contents/${encodeURIComponent(SYNC.cfg.path || 'raspisanie.json')}`;
+async function ghCheck(){
+  const r = await fetch(`https://api.github.com/repos/${SYNC.cfg.repo}`, {headers: ghHeaders(), cache: 'no-store'});
+  if (r.status === 401) throw new Error('ключ не подходит — проверьте, что токен скопирован целиком');
+  if (r.status === 404 || r.status === 403) throw new Error('хранилище «' + SYNC.cfg.repo + '» не найдено или у ключа нет к нему доступа');
+  if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+  const j = await r.json(); return j;
+}
+async function ghGet(){
+  const r = await fetch(ghUrl(), {headers: ghHeaders(), cache: 'no-store'});
+  if (r.status === 404) return null;
+  if (r.status === 401) throw new Error('ключ не подходит или истёк');
+  if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+  const j = await r.json();
+  let text = j.content ? b64dec(j.content) : null;
+  if (!text){ const r2 = await fetch(ghUrl(), {headers: ghHeaders({Accept: 'application/vnd.github.raw+json'}), cache: 'no-store'}); text = await r2.text(); }
+  return {sha: j.sha, data: JSON.parse(text)};
+}
+async function ghPut(data, sha){
+  const body = {message: 'Расписание: синхронизация (' + deviceName() + ')', content: b64enc(JSON.stringify(data))};
+  if (sha) body.sha = sha;
+  const r = await fetch(ghUrl(), {method: 'PUT', headers: ghHeaders({'Content-Type': 'application/json'}), body: JSON.stringify(body)});
+  if (r.status === 409 || r.status === 422) return false; // файл успели изменить с другого устройства — повторим
+  if (r.status === 403 || r.status === 404) throw new Error('у ключа нет права записи в хранилище (нужно Contents: Read and write)');
+  if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+  return true;
+}
+function setSync(state, err){
+  SYNC.state = state; SYNC.err = err || '';
+  const d = $('#sdot'); if (d) d.className = 'sdot ' + state;
+  const st = $('#syncStatus'); if (st) st.innerHTML = syncStatusText();
+}
+function syncStatusText(){
+  if (!SYNC.cfg) return 'Не подключена';
+  const t = SYNC.last ? new Date(SYNC.last).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) : '';
+  return {busy: 'Синхронизация…', ok: 'Синхронизировано' + (t ? ' в ' + t : ''), offline: 'Нет интернета — изменения сохранены на устройстве и отправятся позже', err: '<span class="flag">Ошибка: ' + esc(SYNC.err) + '</span>', off: 'Подключена'}[SYNC.state] || '';
+}
+function syncSoon(){ if (!SYNC.cfg) return; clearTimeout(syncSoon._t); syncSoon._t = setTimeout(syncNow, 2500); }
+async function syncNow(){
+  if (!SYNC.cfg) return;
+  if (SYNC.busy){ SYNC.again = true; return; }
+  if (!navigator.onLine){ setSync('offline'); return; }
+  SYNC.busy = true; setSync('busy');
+  let changed = false;
+  try {
+    for (let attempt = 0; attempt < 4; attempt++){
+      const remote = await ghGet();
+      if (remote && remote.data && remote.data.weeks){
+        const before = canon(sharedData(localPayload()));
+        applyShared(mergeData(localPayload(), remote.data));
+        if (canon(sharedData(localPayload())) !== before) changed = true;
+        if (canon(sharedData(localPayload())) === canon(sharedData(remote.data))) break;
+      }
+      if (await ghPut(Object.assign(localPayload(), {at: Date.now(), by: deviceName()}), remote && remote.sha)) break;
+    }
+    SYNC.last = Date.now(); setSync('ok');
+  } catch(e){
+    setSync(navigator.onLine ? 'err' : 'offline', e.message || String(e));
+  } finally {
+    SYNC.busy = false;
+    if (changed){
+      const a = document.activeElement, typing = a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#main, .modal');
+      if (!typing && !document.querySelector('.modal')) render(); else SYNC.renderLater = true;
+    }
+    if (SYNC.again){ SYNC.again = false; setTimeout(syncNow, 600); }
+  }
+}
+function syncStart(){
+  SYNC.cfg = syncCfg(); setSync(SYNC.cfg ? 'off' : 'none');
+  if (SYNC.cfg) syncNow();
+  setInterval(() => { if (document.visibilityState === 'visible') syncNow(); }, 60000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncNow(); });
+  window.addEventListener('online', () => syncNow());
+  document.addEventListener('focusout', () => { if (SYNC.renderLater){ setTimeout(() => { const a = document.activeElement; if (!(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) && !document.querySelector('.modal')){ SYNC.renderLater = false; render(); } }, 300); } });
+}
+function parseSyncKey(str, repoField){
+  str = (str || '').trim();
+  if (/^rs1:/.test(str)){ try { const o = JSON.parse(b64dec(str.slice(4))); if (o.r && o.t) return {repo: o.r, token: o.t}; } catch(e){} throw new Error('ключ подключения повреждён — скопируйте его целиком'); }
+  if (!str) throw new Error('вставьте ключ');
+  const repo = (repoField || '').trim().replace(/^https?:\/\/github\.com\//, '').replace(/\.git$/, '').replace(/\/$/, '');
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new Error('укажите хранилище в виде логин/название');
+  return {repo, token: str};
+}
+const makeSyncKey = c => 'rs1:' + b64enc(JSON.stringify({r: c.repo, t: c.token}));
+async function syncConnect(mode, key, repoField){
+  let c; try { c = parseSyncKey(key, repoField); } catch(e){ alert(e.message); return; }
+  c.path = 'raspisanie.json';
+  const prev = SYNC.cfg; SYNC.cfg = c; setSync('busy');
+  try {
+    const repo = await ghCheck();
+    if (!repo.private && !confirm('Хранилище «' + c.repo + '» открытое: расписание с именами детей будет видно всем. Лучше сделать его закрытым (Private). Продолжить всё равно?')) { SYNC.cfg = prev; setSync(prev ? 'ok' : 'none'); return; }
+    const remote = await ghGet();
+    if (mode === 'join'){
+      if (!remote || !remote.data || !remote.data.weeks){ alert('В облаке пока нет данных. Сначала на главном устройстве (где самое свежее расписание) нажмите «Это главное устройство».'); SYNC.cfg = prev; setSync(prev ? 'ok' : 'none'); return; }
+      snapshot('Перед подключением синхронизации'); applyShared(remote.data); S.updatedAt = Date.now(); persist();
+    } else {
+      snapshot('Перед первой отправкой в облако');
+      const now = Date.now(); Object.values(S.weeks).forEach(w => { w.u = now; w.fu = now; w.cu = {}; Object.keys(cellsOf(w)).forEach(k => w.cu[k] = now); }); evList().forEach(e => e.u = now); S.settingsU = now; initStamp(); persist();
+    }
+    setSyncCfg(c);
+    await syncNow();
+    if (SYNC.state === 'ok'){ toast(mode === 'join' ? 'Подключено: данные загружены из облака' : 'Готово: ваши данные в облаке'); }
+    render();
+  } catch(e){ SYNC.cfg = prev; setSync(prev ? 'err' : 'none', e.message); alert('Не получилось подключиться: ' + e.message); render(); }
+}
+function syncCardHTML(){
+  if (!SYNC.cfg) return `<section class="card" id="syncCard">
+    <h3>Синхронизация между устройствами</h3>
+    <div class="small muted">Все устройства (телефон, iPad, компьютер) будут видеть одно и то же расписание. Работает и без интернета: изменения отправятся, когда появится сеть.</div>
+    <div class="form">
+      <label>Ключ подключения (rs1:…) или токен GitHub (github_pat_…)<input class="search" id="syKey" autocomplete="off" spellcheck="false" placeholder="вставьте ключ"></label>
+      <label>Закрытое хранилище на GitHub (нужно, только если вставляете токен)<input class="search" id="syRepo" value="kirillpershin-dotcom/raspisanie-data" spellcheck="false"></label>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+      <button class="btn pri" id="syMain" style="padding:10px;white-space:normal">Это главное устройство — отправить мои данные</button>
+      <button class="btn" id="syJoin" style="padding:10px;white-space:normal">Подключить и взять данные из облака</button>
+    </div>
+    <div class="hint">«Главное» нажимается один раз — на том устройстве, где самое свежее расписание. На остальных — «Подключить и взять данные из облака».</div>
+  </section>`;
+  return `<section class="card" id="syncCard">
+    <h3>Синхронизация между устройствами</h3>
+    <div class="row"><span class="sdot ${SYNC.state}" style="position:static;display:inline-block"></span><span id="syncStatus" class="small">${syncStatusText()}</span></div>
+    <div class="small muted" style="margin-top:4px">Хранилище: ${esc(SYNC.cfg.repo)} · это устройство: ${deviceName()}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px">
+      <button class="btn" id="syNow" style="white-space:normal">Синхронизировать сейчас</button>
+      <button class="btn" id="syKeyCopy" style="white-space:normal">Ключ для другого устройства</button>
+      <button class="btn ghost" id="syOff" style="white-space:normal">Отключить здесь</button>
+    </div>
+  </section>`;
+}
+function bindSyncCard(){
+  if ($('#syMain')) $('#syMain').onclick = () => syncConnect('main', $('#syKey').value, $('#syRepo').value);
+  if ($('#syJoin')) $('#syJoin').onclick = () => syncConnect('join', $('#syKey').value, $('#syRepo').value);
+  if ($('#syNow')) $('#syNow').onclick = () => syncNow();
+  if ($('#syKeyCopy')) $('#syKeyCopy').onclick = () => openShare2(makeSyncKey(SYNC.cfg));
+  if ($('#syOff')) $('#syOff').onclick = () => { if (!confirm('Отключить синхронизацию на этом устройстве? Данные на устройстве останутся.')) return; setSyncCfg(null); setSync('none'); renderData(); };
+}
+function openShare2(key){
+  const m = modal(`${mhead('Ключ для другого устройства')}
+    <div class="small muted" style="margin-top:6px">Отправьте ключ себе в Telegram «Избранное». На другом устройстве откройте приложение с иконки → «Данные» → вставьте ключ → «Подключить и взять данные из облака». Никому его не пересылайте: по нему открывается ваше расписание.</div>
+    <textarea style="min-height:110px;margin-top:10px" class="mono" readonly>${esc(key)}</textarea>
+    <div style="display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-top:10px">${navigator.share?'<button class="btn" data-sh style="padding:10px">Поделиться</button>':''}<button class="btn pri" data-cp style="padding:10px">Копировать</button></div>`, 520);
+  const ta = $('textarea', m.el);
+  $('[data-cp]', m.el).onclick = () => copyText(key, ta);
+  const sh = $('[data-sh]', m.el); if (sh) sh.onclick = () => navigator.share({text: key}).catch(()=>{});
+}
+
 /* ============ start ============ */
 load();
 render();
+syncStart();
 if (V.updatedFrom){
   const nW = Object.keys(S.weeks).length, nE = Object.values(S.weeks).reduce((a,w)=>a+entries(w).length,0);
   toast(`Приложение обновлено. Данные на месте: ${nW} ${plural(nW,'неделя','недели','недель')}, ${nE} ${plural(nE,'запись','записи','записей')}`);
