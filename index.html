@@ -353,6 +353,23 @@ nav.tabs button{position:relative}
 .sdot.ok{background:#3aa765}.sdot.busy{background:var(--accent)}.sdot.offline{background:#b8b8bd}.sdot.err{background:var(--bad)}
 @media (min-width:761px){.sdot{top:2px;right:0}}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
+/* цель ребёнка под именем, карточка, подсказки (2026-11-22.2) */
+.kgoal{display:none;position:absolute;left:10px;right:8px;bottom:3px;font-size:11px;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;z-index:1}
+.swr.hasg .kgoal{display:block}
+.cw.hasg .cell{padding-bottom:19px}
+.daylist .rin .kgoal{left:58px;right:52px;bottom:6px;font-size:12px}
+.daylist .swr.hasg .cell{padding-top:6px;padding-bottom:24px}
+.kprof{margin-top:14px;display:grid;gap:8px}
+.kprof label{display:grid;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.kprof textarea{width:100%;font:inherit;font-size:15px;font-weight:400;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:var(--panel);resize:vertical;min-height:40px}
+.km td{vertical-align:top}
+.km .kmpick{margin-top:6px}
+.km .kmpick button{white-space:normal;line-height:1.25;padding:6px 8px}
+.sugg{position:fixed;z-index:45;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 22px rgba(0,0,0,.14);padding:4px;max-width:min(340px,calc(100vw - 16px));min-width:200px;overflow:auto}
+.sugg .sh{font-size:11px;color:var(--muted);padding:4px 8px 2px;text-transform:uppercase;letter-spacing:.04em}
+.sugg button{display:flex;width:100%;align-items:baseline;gap:8px;border:0;background:transparent;text-align:left;padding:8px;border-radius:7px;font:inherit;font-size:15px;color:var(--ink);cursor:pointer}
+.sugg button small{margin-left:auto;color:var(--muted);font-size:12px;white-space:nowrap}
+.sugg button.on,.sugg button:hover{background:var(--accent-soft)}
 /* удаление записи свайпом, меню дня, расчёт дня (2026-11-21) */
 .swr{touch-action:pan-y}
 .rdel{display:none;position:absolute;top:0;right:0;bottom:0;width:92px;border:0;background:#c62828;color:#fff;font-weight:650;font-size:15px;z-index:2;align-items:center;justify-content:center;padding:0}
@@ -435,7 +452,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-22.1';
+const APP_VERSION = '2026-11-22.2';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -543,9 +560,17 @@ function parseEntry(txt){
   const tentative = t.includes('?');
   t = t.replace(/[?:.!,\s]+$/,'').replace(/\?/g,'').trim();
   let suffix = '', m;
+  // номер занятия в другой записи: «Мирон (1/5)», «Мирон 1 из 5», «Мирон №3», «1/5 Мирон» — тот же ребёнок, что «Мирон»
+  t = t.replace(/\s*[(\[]\s*(\d+\s*(?:\/|из)\s*\d+|\d{1,2})\s*[)\]]$/i, (x, a) => { suffix = a.replace(/\s*из\s*/i, '/').replace(/\s/g,''); return ''; }).trim();
+  if (!suffix && (m = t.match(/\s*(\d+)\s*из\s*(\d+)$/i)) && m.index > 0){ suffix = m[1] + '/' + m[2]; t = t.slice(0, m.index).trim(); }
+  if (!suffix && (m = t.match(/\s*[№#]\s*(\d{1,3})$/)) && m.index > 0){ suffix = m[1]; t = t.slice(0, m.index).trim(); }
+  if (!suffix && (m = t.match(/^(\d+\s*\/\s*\d+)\s+(?=\D)/))){ suffix = m[1].replace(/\s/g,''); t = t.slice(m[0].length).trim(); }
+  if (suffix){ t = t.replace(/[\s\-–—,.:]+$/,'').trim(); }
   if ((m = t.match(/\s*(\d+\s*\/\s*\d+)$/))) { suffix = m[1].replace(/\s/g,''); t = t.slice(0, m.index).trim(); }
   else if ((m = t.match(/\s+(\d{1,2}:\d{2})$/))) { suffix = m[1]; t = t.slice(0, m.index).trim(); }
   else if (!/\d+[.,]\d+$/.test(t) && (m = t.match(/\s*(\d{1,2})$/)) && m.index > 0) { suffix = m[1]; t = t.slice(0, m.index).trim(); }
+  t = t.replace(/[\s\-–—,.:]+$/,'').trim();
+  if ((m = t.match(/^(.+?)\s+(\d+\s*\/\s*\d+)\s+(.+)$/)) && m[1].toLowerCase() === m[3].toLowerCase()){ t = m[1]; suffix = suffix || m[2].replace(/\s/g,''); } // «Мирон 1/5 Мирон»
   const key = t.toLowerCase().replace(/ё/g,'е');
   return { base: t, key, suffix, tentative };
 }
@@ -795,10 +820,10 @@ function renderWeek(){
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
     ${dates.map((d,i)=>`<th class="${dcls(d,i)}"><button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><button class="dmore" data-dm="${i}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
-    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=>`<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(i,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
+    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=>`<td class="${dcls(d,i)}"><div class="cw swr${gcls(val(i,t))}"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"><button class="snd info ${val(i,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button>${ghtml(val(i,t))}<button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=>`<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
   <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
-  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(V.day,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
+  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr${gcls(val(V.day,t))}"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"><button class="snd info ${val(V.day,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button>${ghtml(val(V.day,t))}</div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
   <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <section>
     <div class="card"><h3>Заметки к неделе</h3><textarea id="wNotes" rows="${Math.max(4, ((w&&w.notes)||'').split('\n').length+1)}" placeholder="Кто болеет, переносы, новенькие…">${esc(w&&w.notes||'')}</textarea></div>
@@ -822,10 +847,13 @@ function renderWeek(){
 
   const cells = $$('.cell', $('#main'));
   cells.forEach(inp => {
-    inp.addEventListener('input', () => { setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.parentElement.querySelectorAll('.snd,.rdx').forEach(b => b.classList.toggle('on', !!inp.value.trim())); updateWeekNumbers(); markSame(inp); });
+    inp.addEventListener('input', () => { setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.parentElement.querySelectorAll('.snd,.rdx').forEach(b => b.classList.toggle('on', !!inp.value.trim())); updateWeekNumbers(); markSame(inp); updateGoal(inp); });
     inp.addEventListener('focus', () => markSame(inp));
     inp.addEventListener('blur', () => { $$('.cell.same').forEach(c=>c.classList.remove('same')); refreshDatalist(); });
-    inp.addEventListener('keydown', e => moveFocus(e, inp));
+    inp.addEventListener('keydown', e => { if (suggKey(e, inp)) return; moveFocus(e, inp); });
+    inp.addEventListener('focus', () => { if (!inp.value.trim()) showSugg(key, inp); });
+    inp.addEventListener('input', () => showSugg(key, inp));
+    inp.addEventListener('blur', () => setTimeout(() => { if (SUG.inp === inp && document.activeElement !== inp) hideSugg(); }, 120));
   });
   $$('#main .snd').forEach(b => {
     b.addEventListener('mousedown', e => e.preventDefault());
@@ -843,6 +871,87 @@ function renderWeek(){
   updateWeekNumbers();
   refreshDatalist();
 }
+/* подсказки имён для ячейки: сначала те, кто бывал в это время, потом — в это же время по другим дням */
+const SUG = {el: null, inp: null, items: [], on: -1};
+const normQ = q => String(q || '').toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+function slotSuggest(weekKey, i, t, typed){
+  i = +i; const date = addDays(pdate(weekKey), i), ds = ymd(date), h = +t.slice(0, 2), q = normQ(typed);
+  const day = (S.weeks[weekKey] && S.weeks[weekKey].d[i]) || {};
+  const busy = new Set(Object.entries(day).filter(([tt, v]) => tt !== t && v && v.trim()).map(([, v]) => parseEntry(v).key));
+  const out = [];
+  for (const k of index().values()){
+    let score = 0, exact = 0, same = 0, near = 0, lastEx = null, last = null;
+    for (const x of k.ss){
+      if (x.ds === ds && x.t === t) continue;
+      const age = Math.abs(date - x.date) / 864e5, w = age <= 56 ? 3 : age <= 180 ? 1.5 : age <= 365 ? 0.7 : 0.3;
+      if (!last || x.date > last) last = x.date;
+      if (x.i === i && x.t === t){ score += 3 * w; exact++; if (!lastEx || x.date > lastEx) lastEx = x.date; }
+      else if (x.t === t && age <= 180){ score += w; same++; }
+      else if (x.i === i && age <= 180 && Math.abs(+x.t.slice(0, 2) - h) === 1){ score += 0.4 * w; near++; }
+    }
+    const nm = normQ(k.name);
+    if (q){
+      if (!(nm.startsWith(q) || nm.split(/[\s-]/).some(p => p.startsWith(q)))) continue;
+      if (!score && (!last || (date - last) / 864e5 > 365)) continue;      // давно не было и не бывал рядом — не предлагаем
+    } else {
+      if (busy.has(k.key)) continue;                                        // уже стоит в этот день
+      if (!exact && score < 1.5) continue;
+    }
+    const yr = d => d.getFullYear() !== date.getFullYear() ? ' ' + d.getFullYear() : '';
+    const why = exact ? `${exact} ${plural(exact, 'раз', 'раза', 'раз')} в это время` + (lastEx && (date - lastEx) / 864e5 > 56 ? `, последний ${dShort(lastEx)}${yr(lastEx)}` : '')
+      : same ? `в ${t} в другие дни` : near ? `${DAY[i]} в соседнее время` : last ? `последний раз ${dShort(last)}${yr(last)}` : '';
+    out.push({key: k.key, name: k.name, why, score, n: k.ss.length});
+  }
+  out.sort((a, b) => b.score - a.score || b.n - a.n || a.name.localeCompare(b.name, 'ru'));
+  return out.slice(0, 6);
+}
+function hideSugg(){ if (SUG.el) SUG.el.remove(); SUG.el = null; SUG.inp = null; SUG.items = []; SUG.on = -1; }
+function placeSugg(){
+  const el = SUG.el, inp = SUG.inp; if (!el || !inp || !inp.isConnected){ hideSugg(); return; }
+  const r = inp.getBoundingClientRect(), vv = window.visualViewport, vh = vv ? vv.height + vv.offsetTop : innerHeight;
+  el.style.maxHeight = ''; const hh = el.offsetHeight, ww = el.offsetWidth;
+  const below = vh - r.bottom - 8, above = r.top - 8;
+  let top; if (below >= Math.min(hh, 160) || below >= above){ top = r.bottom + 4; el.style.maxHeight = Math.max(120, below) + 'px'; } else { const mh = Math.min(hh, above); top = r.top - mh - 4; el.style.maxHeight = above + 'px'; }
+  el.style.top = Math.max(4, top) + 'px'; el.style.left = Math.max(8, Math.min(r.left, innerWidth - ww - 8)) + 'px';
+}
+function showSugg(weekKey, inp){
+  const v = inp.value, p = parseEntry(v);
+  if (/\d|\?/.test(v) && p.key){ hideSugg(); return; }                      // уже дописывают номер занятия — не мешаем
+  const items = slotSuggest(weekKey, inp.dataset.i, inp.dataset.t, v);
+  if (!items.length || items.length === 1 && normQ(items[0].name) === normQ(v)){ if (SUG.inp === inp || !SUG.inp) hideSugg(); return; }
+  if (SUG.inp !== inp) hideSugg();
+  if (!SUG.el){ SUG.el = document.createElement('div'); SUG.el.className = 'sugg no-print'; SUG.el.id = 'sugg'; document.body.appendChild(SUG.el);
+    SUG.el.addEventListener('pointerdown', e => e.preventDefault()); SUG.el.addEventListener('mousedown', e => e.preventDefault()); }
+  SUG.inp = inp; SUG.items = items; SUG.on = -1;
+  const t = inp.dataset.t;
+  SUG.el.innerHTML = `<div class="sh">${v.trim() ? 'Похожие имена' : `${DAY[+inp.dataset.i]} ${t}: кто бывал в это время`}</div>` + items.map((x, n) => `<button type="button" data-n="${n}"><span>${esc(x.name)}</span><small>${esc(x.why)}</small></button>`).join('');
+  $$('button', SUG.el).forEach(b => b.onclick = () => pickSugg(+b.dataset.n));
+  placeSugg();
+}
+function pickSugg(n){
+  const x = SUG.items[n], inp = SUG.inp; if (!x || !inp) return;
+  inp.value = x.name; hideSugg();
+  inp.dispatchEvent(new Event('input', {bubbles: true})); hideSugg();
+  inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch(e){}
+}
+function suggKey(e, inp){
+  if (!SUG.el || SUG.inp !== inp) return false;
+  const n = SUG.items.length;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); SUG.on = (SUG.on + (e.key === 'ArrowDown' ? 1 : n - 1) + (SUG.on < 0 && e.key === 'ArrowUp' ? 1 : 0)) % n; $$('button', SUG.el).forEach((b, k) => b.classList.toggle('on', k === SUG.on)); return true; }
+  if (e.key === 'Enter' && SUG.on >= 0){ e.preventDefault(); pickSugg(SUG.on); return true; }
+  if (e.key === 'Escape'){ hideSugg(); return true; }
+  return false;
+}
+window.addEventListener('scroll', () => { if (SUG.el) placeSugg(); }, true);
+window.addEventListener('resize', () => { if (SUG.el) placeSugg(); });
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (SUG.el) placeSugg(); });
+
+/* цель ребёнка мелким шрифтом под именем */
+function goalOf(txt){ const k = parseEntry(txt).key; const p = k && kidProfile(k); return p && p.goal ? p.goal.replace(/\s+/g, ' ').trim() : ''; }
+const gcls = txt => goalOf(txt) ? ' hasg' : '';
+const ghtml = txt => `<div class="kgoal" title="${esc(goalOf(txt))}">${esc(goalOf(txt))}</div>`;
+function updateGoal(inp){ const row = inp.closest('.swr'); if (!row) return; const g = goalOf(inp.value), el = $('.kgoal', row); row.classList.toggle('hasg', !!g); if (el){ el.textContent = g; el.title = g; } }
+function refreshGoals(){ $$('#main .swr .cell').forEach(updateGoal); }
 function addSwipe(el, onLeft, onRight){
   if (!el) return; let sx = 0, sy = 0, t0 = 0;
   el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; t0 = Date.now(); }, {passive:true});
@@ -1308,11 +1417,17 @@ function renameKid(kid, newName){
   if (!confirm(exists ? `Объединить «${kid.name}» с «${index().get(target).name}»? Записей: ${kid.ss.length}.` : `Переименовать «${kid.name}» → «${newName}» в ${kid.ss.length} записях?`)) return;
   snapshot('Переименование «'+kid.name+'»');
   const newBase = exists ? index().get(target).name : newName;
+  const fromP = kidProfile(kid.key);
+  if (fromP && target !== kid.key && kJ(fromP) !== kJ(null)){
+    S.kids = S.kids || {}; const to = S.kids[target] || (S.kids[target] = {goal:'', req:'', recs:''});
+    for (const f of ['goal','req','recs']){ const a = (to[f]||'').trim(), b = (fromP[f]||'').trim(); to[f] = !a ? b : !b || a === b ? a : a + '\n' + b; }
+    fromP.goal = fromP.req = fromP.recs = '';
+  }
   for (const s of kid.ss){
     const w = S.weeks[s.week]; const txt = w.d[s.i][s.t];
     const t = txt.replace(/\s+/g,' ').trim();
     const pos = t.toLowerCase().replace(/ё/g,'е').indexOf(kid.key);
-    w.d[s.i][s.t] = pos===0 ? newBase + t.slice(s.p.base.length) : newBase + (s.p.suffix ? ' '+s.p.suffix : '') + (s.p.tentative?'?':'');
+    w.d[s.i][s.t] = pos===0 ? newBase + t.slice(s.p.base.length).replace(/^[.,\s]+(?=\S)/, ' ') : newBase + (s.p.suffix ? ' '+s.p.suffix : '') + (s.p.tentative?'?':'');
   }
   dirty(); save(); render(); toast('Готово');
 }
@@ -1517,15 +1632,94 @@ function openKid(key, weekKey){
       <div class="kstats"><div><b>${c30}</b><span>за 30 дней</span></div><div><b>${c365}</b><span>за 12 месяцев</span></div><div><b>${past.length}</b><span>всего</span></div></div>
       <div class="navrow" style="margin-top:14px"><button class="nav" data-w="-7">‹</button><b class="trunc">${weekTitle(wk, S.settings.days)}</b><button class="nav" data-w="7">›</button></div>
       <div style="margin-top:6px">${ws.length ? `<table class="t"><tbody>${ws.map(s=>`<tr><td class="nw">${DAY[s.i]}, ${dShort(s.date)}</td><td class="n">${s.t}</td><td class="muted">${esc(s.txt)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted small" style="text-align:center;padding:8px">На этой неделе занятий нет</div>'}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><button class="btn" id="kRenOpen" style="padding:10px">Переименовать</button><button class="btn pri" id="kSend" style="padding:10px">Отправить расписание</button></div>
+      <button class="btn" id="kMove" style="padding:10px;width:100%;margin-top:10px;white-space:normal" ${ws.some(s => s.i < S.settings.days) ? '' : 'disabled'}>Перенести расписание ребёнка на следующую неделю</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn" id="kRenOpen" style="padding:10px">Переименовать</button><button class="btn pri" id="kSend" style="padding:10px">Отправить расписание</button></div>
       <div id="kRenBox" style="display:none;margin-top:10px"><div class="row"><input class="search" id="kNew" style="flex:1;min-width:0" value="${esc(kid.name)}"><button class="btn" id="kRen">Сохранить</button></div>
         <div class="hint">Если вписать имя другого ребёнка, записи объединятся.</div></div>
+      <div class="kprof" id="kProf">
+        <label>Цель<textarea id="kpGoal" rows="2" placeholder="Например: самостоятельно стоять у опоры 30 секунд">${esc((kidProfile(key)||{}).goal||'')}</textarea></label>
+        <label>Запрос семьи<textarea id="kpReq" rows="2" placeholder="Что важно семье">${esc((kidProfile(key)||{}).req||'')}</textarea></label>
+        <label>Рекомендации<textarea id="kpRecs" rows="2" placeholder="Домашние задания, советы родителям">${esc((kidProfile(key)||{}).recs||'')}</textarea></label>
+        <div class="hint">Сохраняется сразу и синхронизируется между устройствами. Цель мелким шрифтом видна в расписании под именем.</div>
+      </div>
       <h3 style="margin-top:16px">Занятий по месяцам</h3>
       ${months.map(mk => { const [yy,mm] = mk.split('-').map(Number); return hbar(MS[mm-1]+(mm===1||mk===months[0]?' '+String(yy).slice(2):''), byM[mk]||0, maxM, byM[mk]||0); }).join('')}`;
     $$('[data-w]', m.el).forEach(b => b.onclick = () => { wk = ymd(addDays(pdate(wk), +b.dataset.w)); draw(); });
     $('#kSend', m.el).onclick = () => { m.close(); openSend({mode:'kid', kid:key, week:wk}); };
+    $('#kMove', m.el).onclick = () => { m.close(); openKidMove(key, wk); };
+    [['kpGoal','goal'],['kpReq','req'],['kpRecs','recs']].forEach(([id, f]) => { const ta = $('#' + id, m.el);
+      const fit = () => { ta.style.height = 'auto'; ta.style.height = Math.min(240, ta.scrollHeight + 2) + 'px'; }; fit();
+      ta.oninput = () => { fit(); clearTimeout(ta._t); ta._t = setTimeout(() => { setKidProfile(key, f, ta.value); if (f === 'goal') refreshGoals(); }, 400); };
+      ta.onblur = () => { clearTimeout(ta._t); if ((kidProfile(key)||{})[f] !== ta.value && !(ta.value === '' && !kidProfile(key))){ setKidProfile(key, f, ta.value); refreshGoals(); } }; });
     $('#kRenOpen', m.el).onclick = () => { $('#kRenBox', m.el).style.display = ''; $('#kNew', m.el).focus(); };
     $('#kRen', m.el).onclick = () => { m.close(); renameKid(kid, $('#kNew', m.el).value); };
+  }
+  draw();
+}
+
+/* ---- перенос расписания одного ребёнка на следующую неделю ---- */
+// номер занятия «3/10» продолжается на следующей неделе (4/10 …); если курс закончился — без номера
+function nextCourseText(txt, add, cont){
+  const p = parseEntry(txt), m = /^(\d+)\/(\d+)$/.exec(p.suffix || ''), q = p.tentative ? '?' : '';
+  if (!p.suffix || /:/.test(p.suffix)) return {txt, over: false};          // без номера или «Мирон 15:30» — как есть
+  if (!m || !cont) return {txt: p.base + q, over: false};                     // «Мирон 9» или номера не продолжаем — без номера
+  const n = +m[1] + add, tot = +m[2];
+  if (n > tot) return {txt: p.base + q, over: true};
+  return {txt: p.base + ' ' + n + '/' + tot + q, over: false};
+}
+function kidMovePlan(key, wk, cont){
+  const kid = index().get(key); const tk = ymd(addDays(pdate(wk), 7)), tw = S.weeks[tk], tmon = pdate(tk);
+  const src = kid ? kid.ss.filter(s => s.week === wk && s.i < S.settings.days) : [];
+  const course = src.filter(s => /^\d+\/\d+$/.test(s.p.suffix || '')).length; // сколько занятий курса на этой неделе
+  const rows = src.map((s, n) => {
+    const nt = nextCourseText(s.txt, course, cont);
+    const cur = tw && tw.d[s.i] && tw.d[s.i][s.t] || '';
+    const st = !cur.trim() ? 'add' : parseEntry(cur).key === key ? 'same' : 'conflict';
+    return {i: s.i, t: s.t, date: addDays(tmon, s.i), txt: nt.txt, over: nt.over, cur, st};
+  });
+  const others = tw ? entries(tw).filter(e => parseEntry(e.txt).key === key && !rows.some(r => r.i === e.i && r.t === e.t)) : [];
+  return {kid, tk, rows, others, hasCourse: course > 0};
+}
+function openKidMove(key, wk){
+  const st = {cont: true, pick: {}};
+  const m = modal(`<div id="kmBox"></div>`, 560);
+  function draw(){
+    const P = kidMovePlan(key, wk, st.cont);
+    const conf = P.rows.filter(r => r.st === 'conflict');
+    conf.forEach(r => { const k = r.i + '|' + r.t; if (!st.pick[k]) st.pick[k] = 'keep'; });
+    const line = r => `${DAY[r.i]}, ${dShort(r.date)} · ${r.t}`;
+    $('#kmBox', m.el).innerHTML = `${mhead('Перенести на следующую неделю')}
+      <div class="small muted" style="margin-top:4px"><b>${esc(P.kid.name)}</b>: ${weekTitle(wk, S.settings.days)} → <b>${weekTitle(P.tk, S.settings.days)}</b>. Эта неделя не меняется.</div>
+      ${P.hasCourse ? `<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;color:var(--ink)"><input type="checkbox" id="kmCont" style="flex:none;margin-top:3px" ${st.cont ? 'checked' : ''}><span>Продолжить номера занятий (например, 3/10 → 4/10)</span></label>` : ''}
+      <table class="t km" style="margin-top:10px"><tbody>${P.rows.map(r => {
+        const k = r.i + '|' + r.t;
+        if (r.st === 'same') return `<tr><td class="nw">${line(r)}</td><td class="muted">уже стоит: ${esc(r.cur)}</td></tr>`;
+        if (r.st === 'add') return `<tr><td class="nw">${line(r)}</td><td>${esc(r.txt)}${r.over ? ' <span class="small muted">· курс закончился, без номера</span>' : ''}</td></tr>`;
+        return `<tr class="kmc"><td class="nw">${line(r)}</td><td><div class="flag">Занято: <b>${esc(r.cur)}</b></div>
+          <div class="segfull kmpick" data-k="${k}"><button data-v="keep" class="${st.pick[k] === 'keep' ? 'on' : ''}">Оставить ${esc(parseEntry(r.cur).base || r.cur)}</button><button data-v="replace" class="${st.pick[k] === 'replace' ? 'on' : ''}">Заменить на ${esc(r.txt)}</button></div></td></tr>`;
+      }).join('')}</tbody></table>
+      ${conf.length > 1 ? `<div class="row" style="margin-top:8px"><span class="small muted">Наложений: ${conf.length}</span><span class="sp"></span><button class="btn" id="kmKeepAll">Оставить все</button><button class="btn" id="kmRepAll">Заменить все</button></div>` : ''}
+      ${P.others.length ? `<div class="hint">На следующей неделе у ребёнка уже есть: ${P.others.map(e => DAY[e.i] + ' ' + e.t).join(', ')}. Эти записи не трогаю.</div>` : ''}
+      <div class="hint" id="kmSum"></div>
+      <div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn" data-x>Отмена</button><button class="btn pri" id="kmGo">Перенести</button></div>`;
+    const add = P.rows.filter(r => r.st === 'add').length, rep = conf.filter(r => st.pick[r.i + '|' + r.t] === 'replace'), keep = conf.length - rep.length, same = P.rows.filter(r => r.st === 'same').length;
+    $('#kmSum', m.el).innerHTML = `Будет записано: <b>${add + rep.length}</b>` + (rep.length ? ` · <span class="flag">заменится: ${rep.map(r => esc(r.cur)).join(', ')}</span>` : '') + (keep ? ` · оставлю как есть: ${keep}` : '') + (same ? ` · уже стоит: ${same}` : '');
+    $('#kmGo', m.el).disabled = !(add + rep.length);
+    const cb = $('#kmCont', m.el); if (cb) cb.onchange = () => { st.cont = cb.checked; draw(); };
+    $$('.kmpick', m.el).forEach(g => $$('button', g).forEach(b => b.onclick = () => { st.pick[g.dataset.k] = b.dataset.v; draw(); }));
+    if ($('#kmKeepAll', m.el)) $('#kmKeepAll', m.el).onclick = () => { conf.forEach(r => st.pick[r.i + '|' + r.t] = 'keep'); draw(); };
+    if ($('#kmRepAll', m.el)) $('#kmRepAll', m.el).onclick = () => { conf.forEach(r => st.pick[r.i + '|' + r.t] = 'replace'); draw(); };
+    $('#kmGo', m.el).onclick = () => {
+      const Q = kidMovePlan(key, wk, st.cont);
+      const go_ = Q.rows.filter(r => r.st === 'add' || r.st === 'conflict' && st.pick[r.i + '|' + r.t] === 'replace');
+      if (!go_.length) return;
+      snapshot('Перенос «' + Q.kid.name + '» на следующую неделю');
+      const tw = ensureWeek(Q.tk); let n = 0, r2 = [];
+      go_.forEach(r => { const day = tw.d[r.i] || (tw.d[r.i] = {}); if (r.st === 'conflict') r2.push(r.cur); day[r.t] = r.txt; n++; });
+      tidyWeek(Q.tk); dirty(); save(); m.close();
+      go('week', {week: Q.tk, day: null});
+      toast(`Перенесено: ${n}` + (r2.length ? `, заменено: ${r2.join(', ')}` : ''), {label: 'Отменить', fn: undoLast});
+    };
   }
   draw();
 }
@@ -2352,10 +2546,20 @@ const cellsOf = w => { const m = {}; for (const i in (w.d||{})) for (const t in 
 const fieldsJ = w => { const {u, cu, fu, d, dcalc, dcu, ...r} = w; return JSON.stringify(r); };
 const dcJ = w => JSON.stringify(w.dcalc || null); // формулы дней синхронизируются отдельно, со своей меткой времени dcu
 const eJ = e => { const {u, ...r} = e; return JSON.stringify(r); };
+const KF = ['goal', 'req', 'recs'];          // цель, запрос семьи, рекомендации; у каждого поля своё время изменения ut[поле]
+const kJ = p => JSON.stringify(KF.map(f => p && p[f] || ''));
+const kidProfile = key => (S.kids && S.kids[key]) || null;
+function setKidProfile(key, field, val){
+  S.kids = S.kids || {};
+  const p = S.kids[key] || (S.kids[key] = {goal:'', req:'', recs:''});
+  p[field] = String(val || '');
+  save();
+}
 const sharedSettings = () => ({template: S.settings.template, days: S.settings.days, satRate: S.settings.satRate, from: S.settings.from, to: S.settings.to});
 function initStamp(){
   S.tomb = S.tomb || {}; S.evTomb = S.evTomb || {};
-  LJ = {c:{}, f:{}, dc:{}, e:{}, s: JSON.stringify(sharedSettings())};
+  LJ = {c:{}, f:{}, dc:{}, e:{}, k:{}, s: JSON.stringify(sharedSettings())};
+  for (const k in (S.kids || {})) LJ.k[k] = KF.map(f => S.kids[k][f] || '');
   for (const k in S.weeks){ LJ.c[k] = cellsOf(S.weeks[k]); LJ.f[k] = fieldsJ(S.weeks[k]); LJ.dc[k] = dcJ(S.weeks[k]); }
   for (const e of evList()) LJ.e[e.id] = eJ(e);
 }
@@ -2375,6 +2579,8 @@ function stampChanges(){
   for (const e of evList()){ ids.add(e.id); const j = eJ(e); if (LJ.e[e.id] !== j){ e.u = now; LJ.e[e.id] = j; delete S.evTomb[e.id]; ch = true; } }
   for (const id in LJ.e) if (!ids.has(id)){ S.evTomb[id] = now; delete LJ.e[id]; ch = true; }
   const sj = JSON.stringify(sharedSettings()); if (sj !== LJ.s){ S.settingsU = now; LJ.s = sj; ch = true; }
+  LJ.k = LJ.k || {};
+  for (const k in (S.kids || {})){ const p = S.kids[k], prev = LJ.k[k] || ['', '', '']; KF.forEach((f, n) => { if ((p[f] || '') !== prev[n]){ (p.ut || (p.ut = {}))[f] = now; ch = true; } }); LJ.k[k] = KF.map(f => p[f] || ''); }
   return ch;
 }
 function canon(o){
@@ -2382,8 +2588,8 @@ function canon(o){
   if (o && typeof o === 'object') return '{' + Object.keys(o).filter(k => o[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + canon(o[k])).join(',') + '}';
   return JSON.stringify(o);
 }
-const sharedData = d => ({weeks: d.weeks || {}, events: [...(d.events || [])].sort((a,b) => a.id < b.id ? -1 : 1), tomb: d.tomb || {}, evTomb: d.evTomb || {}, settings: d.settings || null, settingsU: d.settingsU || 0});
-function localPayload(){ return {v: 2, weeks: S.weeks, events: evList(), tomb: S.tomb || {}, evTomb: S.evTomb || {}, settings: sharedSettings(), settingsU: S.settingsU || 0}; }
+const sharedData = d => ({weeks: d.weeks || {}, events: [...(d.events || [])].sort((a,b) => a.id < b.id ? -1 : 1), tomb: d.tomb || {}, evTomb: d.evTomb || {}, settings: d.settings || null, settingsU: d.settingsU || 0, kids: d.kids || {}});
+function localPayload(){ return {v: 2, weeks: S.weeks, events: evList(), tomb: S.tomb || {}, evTomb: S.evTomb || {}, settings: sharedSettings(), settingsU: S.settingsU || 0, kids: S.kids || {}}; }
 function mergeData(L, R){
   const out = {weeks:{}, events:[], tomb:{}, evTomb:{}};
   for (const k of new Set([...Object.keys(L.tomb||{}), ...Object.keys(R.tomb||{})])) out.tomb[k] = Math.max((L.tomb||{})[k]||0, (R.tomb||{})[k]||0);
@@ -2396,6 +2602,16 @@ function mergeData(L, R){
   out.events = Object.values(ev).filter(e => !(out.evTomb[e.id] && out.evTomb[e.id] >= (e.u||0)));
   const rs = (R.settingsU||0) > (L.settingsU||0);
   out.settings = rs && R.settings ? R.settings : L.settings; out.settingsU = Math.max(L.settingsU||0, R.settingsU||0);
+  // карточки детей (цель, запрос семьи, рекомендации): по каждому ребёнку берётся более позднее изменение.
+  // Если файл в облаке записан старой версией приложения без этого поля, карточки остаются с этого устройства.
+  out.kids = {};
+  for (const k of new Set([...Object.keys(L.kids||{}), ...Object.keys(R.kids||{})])){
+    const a = (L.kids||{})[k], b = (R.kids||{})[k];
+    if (!a || !b){ out.kids[k] = a || b; continue; }
+    const o = {ut: {}};
+    for (const f of KF){ const ta = (a.ut||{})[f] || 0, tb = (b.ut||{})[f] || 0; o[f] = tb > ta ? (b[f] || '') : (a[f] || ''); if (ta || tb) o.ut[f] = Math.max(ta, tb); }
+    out.kids[k] = o;
+  }
   return out;
 }
 /* слияние недели по ячейкам: у каждой ячейки своё время изменения (cu), у остальных полей — fu */
@@ -2426,7 +2642,7 @@ function mergeWeek(a, b, tomb){
   return w;
 }
 function applyShared(d){
-  S.weeks = d.weeks || {}; S.events = d.events || []; S.tomb = d.tomb || {}; S.evTomb = d.evTomb || {};
+  S.weeks = d.weeks || {}; S.events = d.events || []; S.tomb = d.tomb || {}; S.evTomb = d.evTomb || {}; if (d.kids) S.kids = d.kids;
   if (d.settings) Object.assign(S.settings, d.settings);
   S.settingsU = d.settingsU || 0;
   initStamp(); dirty(); persist();
