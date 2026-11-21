@@ -512,7 +512,7 @@ function migrate(){
 let S;
 const fmtDT = t => t ? new Date(t).toLocaleString('ru-RU', {day:'numeric', month:'long', hour:'2-digit', minute:'2-digit'}) : '—';
 function fromSeed(){
-  return { v:1, weeks: clone(SEED.weeks||{}), events: clone(SEED.events||[]), settings: Object.assign({}, SEED.settings||{}), updatedAt: SEED.updatedAt || 0, savedAt: SEED.savedAt };
+  return { v:1, weeks: clone(SEED.weeks||{}), events: clone(SEED.events||[]), kids: clone(SEED.kids||{}), settings: Object.assign({}, SEED.settings||{}), updatedAt: SEED.updatedAt || 0, savedAt: SEED.savedAt };
 }
 function load(){
   let raw = null;
