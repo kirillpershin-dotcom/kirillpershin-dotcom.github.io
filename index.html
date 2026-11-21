@@ -352,6 +352,53 @@ nav.tabs button{position:relative}
 .sdot.ok{background:#3aa765}.sdot.busy{background:var(--accent)}.sdot.offline{background:#b8b8bd}.sdot.err{background:var(--bad)}
 @media (min-width:761px){.sdot{top:2px;right:0}}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
+/* удаление записи свайпом, меню дня, расчёт дня (2026-11-21) */
+.swr{touch-action:pan-y}
+.rdel{display:none;position:absolute;top:0;right:0;bottom:0;width:92px;border:0;background:#c62828;color:#fff;font-weight:650;font-size:15px;z-index:2;align-items:center;justify-content:center;padding:0}
+.swr.open .rdel{display:flex}
+.cw{overflow:hidden}
+.cw .rdel{width:76px;font-size:14px;border-radius:0}
+.cw.open .snd,.cw.drag .snd,.cw.open .rdx,.cw.drag .rdx{display:none!important}
+.daylist .r.swr{display:block;position:relative;overflow:hidden}
+.daylist .rin{display:flex;align-items:center;width:100%;min-height:50px;background:var(--panel);position:relative;z-index:1}
+.daylist .r.open .rin{transform:translateX(-92px)}
+.swr.settle .rin,.swr.settle .cell{transition:transform .18s ease}
+.rdx{display:none;align-items:center;justify-content:center;border:0;background:var(--panel);color:var(--bad);border-radius:7px;width:28px;height:28px;padding:0;flex:none}
+.rdx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rdx:hover{background:var(--line2)}
+.cw .rdx{position:absolute;right:36px;top:50%;transform:translateY(-50%)}
+@media (hover:hover) and (pointer:fine){
+  td:hover .rdx.on{display:flex}
+  .daylist .r:hover .rdx.on{display:flex;margin-right:4px}
+}
+.dmore{border:0;background:none;color:var(--muted);font-size:18px;line-height:1;padding:0 6px;border-radius:6px;cursor:pointer;letter-spacing:1px}
+.dmore:hover{background:var(--line2);color:var(--ink)}
+table.grid thead th .dmore{float:right;margin:-2px -4px 0 4px}
+.dfhead{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.dfhead .dmore{margin-left:auto;font-size:20px;padding:2px 10px}
+.dedit{display:inline-block;margin-top:5px;border:0;background:none;padding:0;color:var(--accent);font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+.dfoot .dedit{font-size:14px;margin-top:8px}
+.dedit .dshort{display:none}
+table.grid .dedit .dshort{display:inline}
+table.grid .dedit .dlong{display:none}
+.dacc .ln.cust span:first-child{color:var(--accent)}
+.dacc .fx{display:block;color:var(--muted);font-size:11.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dfoot .dacc .fx{font-size:12.5px}
+.menu{display:grid;gap:8px;margin-top:12px}
+.menu .btn{padding:12px;text-align:left;white-space:normal}
+.menu .btn.danger{color:var(--bad)}
+.btn.dangerfill{background:#c62828;border-color:#c62828;color:#fff}
+.dcl{max-height:38vh;overflow:auto;margin-top:8px}
+.dcgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(120px,1.3fr) 96px 34px;gap:8px;align-items:center;margin-top:12px}
+.dcgrid .nm{font-weight:600;min-width:0}
+.dcgrid .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.dcgrid input{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 9px;width:100%;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.dcgrid input.err{border-color:var(--bad)}
+.dcgrid .v{text-align:right;font-variant-numeric:tabular-nums}
+.dcgrid .v.err{color:var(--bad);font-size:12px}
+.dcgrid .cust{color:var(--accent)}
+@media (max-width:520px){.dcgrid{grid-template-columns:minmax(0,1fr) 88px 34px}.dcgrid .nm{grid-column:1/4}}
+.dtab tr.click td:first-child{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -375,7 +422,7 @@ nav.tabs button{position:relative}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-08.4';
+const APP_VERSION = '2026-11-21.1';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -414,7 +461,7 @@ function toast(msg, act){
   const t=$('#toast'); t.innerHTML = esc(msg) + (act ? `<u>${esc(act.label)}</u>` : '');
   t.classList.add('on'); t.classList.toggle('act', !!act);
   t.onclick = act ? () => { t.classList.remove('on','act'); act.fn(); } : null;
-  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on','act'), act ? 6000 : 1800);
+  clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on','act'), act ? (act.ms || 6000) : 1800);
 }
 
 /* ============ state ============ */
@@ -584,12 +631,12 @@ function evalAst(a, get){
 }
 const letter = i => String.fromCharCode(65+i);
 function calcWeek(w){
-  const lines = (w && w.calc) || [], N = weekN(w), memo = {}, busy = {};
+  const lines = (w && w.calc) || [], N = weekN(w), memo = {}, busy = {}, dl = dayDeltas(w);
   function val(i){
     if (i in memo){ if (memo[i] instanceof Error) throw memo[i]; return memo[i]; }
     if (busy[i]) throw new Error('цикл');
     busy[i]=1;
-    try { const v = evalAst(compile(lines[i].f), get); memo[i]=v; return v; }
+    try { const v = evalAst(compile(lines[i].f), get) + (dl[i] || 0); memo[i]=v; return v; }
     catch(e){ memo[i]=e; throw e; } finally { busy[i]=0; }
   }
   function get(id){ if (id==='N') return N; if (id==='SB') return satCount(w); const i = id.charCodeAt(0)-65; if (i<0||i>=lines.length) throw new Error('нет строки '+id); return val(i); }
@@ -610,7 +657,7 @@ function ensureWeek(key){
 function tidyWeek(key){
   const w = S.weeks[key]; if (!w) return;
   for (const i in w.d) if (!Object.keys(w.d[i]).length) delete w.d[i];
-  if (!entries(w).length && !w.notes && !w.calcEdited && w.n==null) delete S.weeks[key];
+  if (!entries(w).length && !w.notes && !w.calcEdited && !w.dcalc && w.n==null) delete S.weeks[key];
 }
 function setCell(key, i, t, val){
   val = String(val||'').replace(/\s+/g,' ').trim();
@@ -733,13 +780,13 @@ function renderWeek(){
     <button id="wShare"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>Отправить</button>
   </div>
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
-    ${dates.map((d,i)=>`<th class="${dcls(d,i)}"><button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
+    ${dates.map((d,i)=>`<th class="${dcls(d,i)}"><button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><button class="dmore" data-dm="${i}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
-    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=>`<td class="${dcls(d,i)}"><div class="cw"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(i,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button></div></td>`).join('')}</tr>`).join('')}
+    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=>`<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(i,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=>`<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
   <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
-  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(V.day,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button></div>`).join('')}</div>
-  <div class="dfoot"><div class="small muted" style="margin-bottom:4px">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</div><div class="dacc" data-dacc="${V.day}"></div></div>
+  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(V.day,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
+  <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span><button class="dmore" data-dm="${V.day}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <section>
     <div class="card"><h3>Заметки к неделе</h3><textarea id="wNotes" rows="${Math.max(4, ((w&&w.notes)||'').split('\n').length+1)}" placeholder="Кто болеет, переносы, новенькие…">${esc(w&&w.notes||'')}</textarea></div>
   </section>`;
@@ -764,7 +811,7 @@ function renderWeek(){
 
   const cells = $$('.cell', $('#main'));
   cells.forEach(inp => {
-    inp.addEventListener('input', () => { setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.nextElementSibling?.classList.toggle('on', !!inp.value.trim()); updateWeekNumbers(); markSame(inp); });
+    inp.addEventListener('input', () => { setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.parentElement.querySelectorAll('.snd,.rdx').forEach(b => b.classList.toggle('on', !!inp.value.trim())); updateWeekNumbers(); markSame(inp); });
     inp.addEventListener('focus', () => markSame(inp));
     inp.addEventListener('blur', () => { $$('.cell.same').forEach(c=>c.classList.remove('same')); refreshDatalist(); });
     inp.addEventListener('keydown', e => moveFocus(e, inp));
@@ -773,6 +820,13 @@ function renderWeek(){
     b.addEventListener('mousedown', e => e.preventDefault());
     b.onclick = () => { const k = parseEntry(b.previousElementSibling.value).key; if (k) openKid(k, key); };
   });
+  $$('#main .rdx').forEach(b => {
+    b.addEventListener('mousedown', e => e.preventDefault());
+    b.onclick = () => { const inp = $('.cell', b.closest('.swr')); deleteEntry(key, +inp.dataset.i, inp.dataset.t); };
+  });
+  $$('#main .rdel').forEach(b => b.onclick = e => { e.stopPropagation(); const inp = $('.cell', b.closest('.swr')); deleteEntry(key, +inp.dataset.i, inp.dataset.t); });
+  $$('#main .swr').forEach(bindRowSwipe);
+  $$('#main [data-dm]').forEach(b => b.onclick = e => { e.stopPropagation(); openDayMenu(key, +b.dataset.dm); });
   const dl = $('#dayList'); let sx = 0, sy = 0;
   dl.addEventListener('touchstart', e => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive:true});
   dl.addEventListener('touchend', e => {
@@ -824,31 +878,216 @@ function updateWeekNumbers(){
   }
   const cnt = weekCount(w);
   $('#wN').textContent = cnt + ' ' + plural(cnt,'занятие','занятия','занятий') + ' за неделю';
-  $$('[data-dacc]').forEach(el => el.innerHTML = dayAccHTML(w, +el.dataset.dacc));
+  $$('[data-dacc]').forEach(el => el.innerHTML = dayAccHTML(w, +el.dataset.dacc, V.week));
+  bindDayCalcButtons($('#main'));
 }
 /* учёт дня: занятия дня × ставки из формул недели (строки вида ставка*N; недельные вычеты не делятся по дням) */
+function rateOf(f, v){
+  try {
+    const ids = tokenize(f).filter(t => t.t==='id');
+    if (!ids.length || ids.some(t => t.v!==v)) return null;
+    const ast = compile(f), g = x => evalAst(ast, () => x);
+    const rate = g(1) - g(0);
+    return (rate && isFinite(rate) && Math.abs(g(2) - g(0) - 2*rate) < 1e-6) ? rate : null;
+  } catch(e){ return null; }
+}
 function rateLines(w, v){
   const lines = (w && w.calc) || S.settings.template, out = [];
-  lines.forEach((l,i) => {
-    try {
-      const ids = tokenize(l.f).filter(t => t.t==='id');
-      if (!ids.length || ids.some(t => t.v!==v)) return;
-      const ast = compile(l.f), f = x => evalAst(ast, () => x);
-      const rate = f(1) - f(0);
-      if (rate && isFinite(rate) && Math.abs(f(2) - f(0) - 2*rate) < 1e-6) out.push({name: l.name || letter(i), rate});
-    } catch(e){}
-  });
+  lines.forEach((l,i) => { const rate = rateOf(l.f, v); if (rate != null) out.push({name: l.name || letter(i), rate}); });
   return out;
 }
-function dayAccHTML(w, i){
-  const c = w && w.d[i] ? Object.values(w.d[i]).filter(v=>v.trim()).length : 0;
-  if (!c) return '<span class="muted">нет занятий</span>';
-  let rates = rateLines(w, i===5 ? 'SB' : 'N');
-  if (i===5 && !rates.length) rates = [{name:'Суббота', rate:S.settings.satRate}];
-  const total = rates.reduce((a,r)=>a+r.rate*c, 0);
+/* ---- свой расчёт отдельного дня ----
+   Хранится в неделе: w.dcalc = {"<день 0–5>": {"<название строки недели>": "формула через N"}}.
+   N в формуле дня — число занятий в этот день. Разница с обычной ставкой прибавляется к строке недели,
+   поэтому итог недели, «Учёт», месяц и год считаются из одного места. Дни без своей формулы считаются как раньше. */
+const dayCnt = (w, i) => w && w.d && w.d[i] ? Object.values(w.d[i]).filter(v => v && String(v).trim()).length : 0;
+const lineKey = (l, li) => l.name || letter(li);
+const rateStr = r => String(Math.round(r*100)/100);
+function dayBase(w, i){
+  const v = i===5 ? 'SB' : 'N', lines = (w && w.calc) || S.settings.template, out = [];
+  lines.forEach((l, li) => { const rate = rateOf(l.f, v); if (rate != null) out.push({li, key: lineKey(l, li), name: l.name || letter(li), rate}); });
+  if (i===5 && !out.length) out.push({li: -1, key: 'Суббота', name: 'Суббота', rate: S.settings.satRate, virtual: true});
+  return out;
+}
+function dayFormula(src, c){
+  const ast = compile(src);
+  const v = evalAst(ast, id => { if (id==='N' || id==='SB') return c; throw new Error('в формуле дня можно использовать только N'); });
+  if (!isFinite(v)) throw new Error('деление на ноль');
+  return v;
+}
+function dayLines(w, i){
+  const c = dayCnt(w, i), ov = (w && w.dcalc && w.dcalc[i]) || {};
+  return dayBase(w, i).map(b => {
+    const f = !b.virtual && ov[b.key] != null ? ov[b.key] : null, def = b.rate * c;
+    let v = def, err = null;
+    if (f != null){ try { v = dayFormula(f, c); } catch(e){ err = e.message; v = def; } }
+    return Object.assign({}, b, {c, f, custom: f != null, v, def, err});
+  });
+}
+function dayDeltas(w){
+  const out = {}; if (!w || !w.dcalc) return out;
+  for (const i in w.dcalc){ if (!(+i >= 0 && +i <= 5)) continue;
+    dayLines(w, +i).forEach(l => { if (l.custom && !l.err && l.li >= 0 && l.v !== l.def) out[l.li] = (out[l.li] || 0) + (l.v - l.def); }); }
+  return out;
+}
+const hasDayCalc = (w, i) => !!(w && w.dcalc && w.dcalc[i] && Object.keys(w.dcalc[i]).length);
+function dayAccHTML(w, i, key){
+  const c = dayCnt(w, i), L = dayLines(w, i), cust = L.some(l => l.custom);
+  const edit = key && L.some(l => !l.virtual) ? `<button class="dedit" data-dcalc="${i}" data-dk="${key}" title="Изменить формулу расчёта только для этого дня"><span class="dlong">${cust ? 'Своя формула дня · изменить' : 'Изменить формулу дня'}</span><span class="dshort">${cust ? 'Своя формула ✎' : 'Формула дня ✎'}</span></button>` : '';
+  if (!c && !cust) return '<span class="muted">нет занятий</span>';
+  const total = L.reduce((a, l) => a + l.v, 0);
   return `<b>${c} ${plural(c,'занятие','занятия','занятий')}</b>` +
-    rates.map(r => `<div class="ln" title="${esc(r.name)}: ${fmtNum(r.rate)} × ${c}"><span>${i===5 ? fmtNum(r.rate)+' × '+c : esc(r.name)}</span><span>${fmtMoney(r.rate*c)}</span></div>`).join('') +
-    (rates.length > 1 ? `<div class="ln tot"><span>Общая</span><span>${fmtMoney(total)}</span></div>` : '');
+    L.map(l => { const fx = l.custom ? l.f : rateStr(l.rate) + '*N';
+      return `<div class="ln ${l.custom?'cust':''}" title="${esc(l.name)}: ${esc(fx)}, N = ${c}${l.custom?' (свой расчёт дня)':''}${l.err?' — ошибка: '+esc(l.err):''}"><span>${i===5 && !l.custom ? fmtNum(l.rate)+' × '+c : esc(l.name)}${l.custom?' *':''}</span><span>${fmtMoney(l.v)}</span></div><span class="fx">${esc(fx.replace(/\*/g,'×'))}</span>`; }).join('') +
+    (L.length > 1 ? `<div class="ln tot"><span>Общая</span><span>${fmtMoney(total)}</span></div>` : '') + edit;
+}
+function bindDayCalcButtons(root, after){
+  $$('[data-dcalc]', root).forEach(b => b.onclick = e => { e.stopPropagation(); if (after) after(); openDayCalc(b.dataset.dk, +b.dataset.dcalc); });
+}
+function renameDayCalcKey(w, from, to){
+  if (!w || !w.dcalc || !from || from===to) return;
+  for (const i in w.dcalc){ const o = w.dcalc[i]; if (o[from] != null && o[to] == null){ o[to] = o[from]; delete o[from]; } }
+}
+function dropDayCalcKey(w, k){
+  if (!w || !w.dcalc) return;
+  for (const i in w.dcalc){ delete w.dcalc[i][k]; if (!Object.keys(w.dcalc[i]).length) delete w.dcalc[i]; }
+  if (!Object.keys(w.dcalc).length) delete w.dcalc;
+}
+const dayTitle = (key, i) => { const d = addDays(pdate(key), i); return DAYL[i][0].toUpperCase() + DAYL[i].slice(1) + ', ' + dShort(d) + ' ' + d.getFullYear(); };
+function rerenderAfterDayChange(){ if (V.view==='week') renderWeek(); else render(); }
+function openDayCalc(key, i){
+  const w0 = S.weeks[key], base = dayBase(w0, i).filter(b => !b.virtual);
+  if (!base.length){ alert('В расчёте этой недели нет строк вида «ставка × N» (например 2600*N), поэтому менять для дня нечего. Добавьте такую строку в «Учёт» → «Расчёт недели».'); return; }
+  const c = dayCnt(w0, i), ov = (w0 && w0.dcalc && w0.dcalc[i]) || {};
+  const m = modal(`${mhead('Расчёт дня')}
+    <div class="small muted" style="margin-top:4px">${dayTitle(key, i)} · N = <b>${c}</b> ${plural(c,'занятие','занятия','занятий')} в этот день</div>
+    <div class="dcgrid">${base.map((b,k) => `<div class="nm">${esc(b.name)}<small>по неделе: ${rateStr(b.rate)}*N</small></div>
+      <input data-k="${k}" value="${esc(ov[b.key] != null ? ov[b.key] : rateStr(b.rate)+'*N')}" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Формула «${esc(b.name)}» для этого дня">
+      <div class="v" data-r="${k}"></div><button class="btn ghost icon" data-rs="${k}" title="Вернуть формулу недели">↺</button>`).join('')}</div>
+    <div class="row" style="margin-top:10px"><span class="small">Итого за день: <b id="dcTot"></b></span></div>
+    <div class="hint">N — число занятий в этот день. Примеры: <span class="mono">3000*N</span>, <span class="mono">2600*N+1000</span>, <span class="mono">2600*(N-1)</span>. Меняется только этот день: остальные дни, другие недели и шаблон остаются как были. Итог недели и вкладка «Учёт» пересчитаются сами.</div>
+    <div class="row" style="margin-top:12px">${Object.keys(ov).length ? '<button class="btn ghost" id="dcReset">Как в неделе</button>' : ''}<span class="sp"></span><button class="btn" data-x>Отмена</button><button class="btn pri" id="dcSave">Сохранить</button></div>`, 560);
+  const el = m.el, inps = $$('input[data-k]', el);
+  const isDefault = (f, rate) => { for (let n = 0; n <= 12; n++){ if (Math.abs(dayFormula(f, n) - rate*n) > 1e-6) return false; } return true; };
+  function upd(){
+    let tot = 0, bad = false;
+    inps.forEach(inp => { const k = +inp.dataset.k, b = base[k], r = $(`[data-r="${k}"]`, el);
+      const f = inp.value.trim();
+      try { const v = f ? dayFormula(f, c) : b.rate*c; tot += v; r.className = 'v' + (f && !isDefault(f, b.rate) ? ' cust' : ''); r.textContent = fmtMoney(v); inp.classList.remove('err'); }
+      catch(e){ bad = true; r.className = 'v err'; r.textContent = 'ошибка: ' + e.message; inp.classList.add('err'); } });
+    $('#dcTot', el).textContent = bad ? '—' : fmtMoney(tot);
+    $('#dcSave', el).disabled = bad;
+  }
+  inps.forEach(inp => inp.oninput = upd);
+  $$('[data-rs]', el).forEach(b => b.onclick = () => { const k = +b.dataset.rs; inps[k].value = rateStr(base[k].rate) + '*N'; upd(); });
+  const rs = $('#dcReset', el); if (rs) rs.onclick = () => { inps.forEach((inp,k) => inp.value = rateStr(base[k].rate) + '*N'); upd(); };
+  $('#dcSave', el).onclick = () => {
+    const next = {};
+    for (const inp of inps){ const b = base[+inp.dataset.k], f = inp.value.trim();
+      try { if (f && !isDefault(f, b.rate)) next[b.key] = f; } catch(e){ toast('Исправьте формулу: ' + e.message); inp.focus(); return; } }
+    const w = Object.keys(next).length ? ensureWeek(key) : S.weeks[key];
+    if (w){
+      const keep = {}; const known = new Set(base.map(b => b.key));
+      Object.entries((w.dcalc && w.dcalc[i]) || {}).forEach(([k, f]) => { if (!known.has(k)) keep[k] = f; });
+      const day = Object.assign(keep, next);
+      if (Object.keys(day).length){ (w.dcalc || (w.dcalc = {}))[i] = day; }
+      else if (w.dcalc){ delete w.dcalc[i]; if (!Object.keys(w.dcalc).length) delete w.dcalc; }
+    }
+    save(); m.close(); rerenderAfterDayChange();
+    toast(Object.keys(next).length ? 'Свой расчёт дня сохранён' : 'День считается по формулам недели');
+  };
+  upd();
+  setTimeout(() => inps[0] && !isTouch() && inps[0].focus(), 50);
+}
+/* ---- удаление одной записи ---- */
+function deleteEntry(key, i, t){
+  const w = S.weeks[key], old = w && w.d[i] && w.d[i][t];
+  if (!old) return;
+  setCell(key, i, t, '');
+  rerenderAfterDayChange();
+  toast(`Удалено: ${t} ${old}`, {label: 'Отменить', ms: 8000, fn: () => {
+    const ww = S.weeks[key];
+    if (ww && ww.d[i] && ww.d[i][t]){ toast('В это время уже есть запись — не возвращаю'); return; }
+    setCell(key, i, t, old); rerenderAfterDayChange(); toast('Запись возвращена');
+  }});
+}
+/* свайп влево по строке открывает кнопку «Удалить»; сам свайп ничего не удаляет */
+const RW = row => row.classList.contains('cw') ? 76 : 92;
+function closeOpenRows(except){ $$('.swr.open').forEach(r => { if (r !== except){ r.classList.add('settle'); r.classList.remove('open'); } }); }
+document.addEventListener('touchstart', e => { if (!e.target.closest('.swr.open .rdel')) closeOpenRows(); }, {passive: true, capture: true});
+document.addEventListener('mousedown', e => { if (!e.target.closest('.swr.open .rdel')) closeOpenRows(); }, true);
+function bindRowSwipe(row){
+  const slider = () => row.classList.contains('cw') ? null : $('.rin', row); // в сетке имя не сдвигаем — кнопка ложится поверх правого края
+  let st = null;
+  row.addEventListener('touchstart', e => {
+    st = null;
+    if (e.touches.length !== 1 || e.target.closest('.rdel')) return;
+    const inp = $('.cell', row); if (!inp || !inp.value.trim()) return;
+    st = {x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, mode: null, open: row.classList.contains('open')};
+  }, {passive: true});
+  row.addEventListener('touchmove', e => {
+    if (!st) return;
+    const dx = e.touches[0].clientX - st.x, dy = e.touches[0].clientY - st.y;
+    if (!st.mode){
+      if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
+      st.mode = Math.abs(dx) > Math.abs(dy) * 1.2 && (dx < 0 || st.open) ? 'h' : 'pass';
+      if (st.mode === 'h'){ row.classList.remove('settle'); row.classList.add('drag'); if (document.activeElement && document.activeElement.blur && row.contains(document.activeElement)) document.activeElement.blur(); }
+    }
+    if (st.mode !== 'h') return;
+    if (e.cancelable) e.preventDefault();
+    st.dx = dx; const W = RW(row), off = Math.max(-W - 20, Math.min(0, (st.open ? -W : 0) + dx));
+    const sl = slider(); if (sl) sl.style.transform = `translateX(${off}px)`; else row.classList.toggle('open', (st.open ? -W : 0) + dx < -45);
+  }, {passive: false});
+  const end = e => {
+    if (!st) return; const s = st; st = null;
+    if (s.mode !== 'h') return;
+    e.stopPropagation();
+    row.classList.remove('drag'); row.classList.add('settle'); const sl = slider(); if (sl) sl.style.transform = '';
+    row.classList.toggle('open', s.open ? s.dx < 30 : s.dx < -45);
+  };
+  row.addEventListener('touchend', end);
+  row.addEventListener('touchcancel', end);
+}
+/* ---- меню дня и очистка дня ---- */
+function openDayMenu(key, i){
+  const w = S.weeks[key], c = dayCnt(w, i), canCalc = dayBase(w, i).some(b => !b.virtual);
+  const m = modal(`${mhead(esc(dayTitle(key, i)))}
+    <div class="small muted" style="margin-top:4px">${c ? c + ' ' + plural(c,'запись','записи','записей') : 'записей нет'}${hasDayCalc(w, i) ? ' · свой расчёт дня' : ''}</div>
+    <div class="menu">
+      ${canCalc ? '<button class="btn" data-a="calc">Изменить расчёт дня</button>' : ''}
+      <button class="btn" data-a="send" ${c ? '' : 'disabled'}>Отправить расписание дня</button>
+      <hr style="margin:4px 0">
+      <button class="btn danger" data-a="clear" ${c ? '' : 'disabled'}>Очистить записи дня…</button>
+    </div>`, 420);
+  $$('[data-a]', m.el).forEach(b => b.onclick = () => { m.close();
+    if (b.dataset.a === 'calc') openDayCalc(key, i);
+    else if (b.dataset.a === 'send') openSend({mode: 'day', week: key, day: i});
+    else confirmClearDay(key, i); });
+}
+function confirmClearDay(key, i){
+  const w = S.weeks[key], day = (w && w.d[i]) || {};
+  const ts = Object.keys(day).filter(t => day[t] && day[t].trim()).sort();
+  if (!ts.length){ toast('В этот день нет записей'); return; }
+  const n = ts.length;
+  const m = modal(`${mhead('Очистить записи дня?')}
+    <div style="margin-top:8px"><b>${esc(dayTitle(key, i))}</b></div>
+    <div style="margin-top:4px">Будет удалено: <b>${n} ${plural(n,'запись','записи','записей')}</b></div>
+    <div class="dcl"><table class="t"><tbody>${ts.map(t => `<tr><td class="muted" style="width:60px">${t}</td><td>${esc(day[t])}</td></tr>`).join('')}</tbody></table></div>
+    <div class="hint">Удаляются только записи этого дня. Другие дни, заметки, события и расчёт не меняются; история детей по другим дням остаётся. Сразу после очистки можно нажать «Отменить».</div>
+    <div class="row" style="margin-top:12px"><span class="sp"></span><button class="btn" data-x>Отмена</button><button class="btn dangerfill" id="clrGo">Удалить ${n} ${plural(n,'запись','записи','записей')}</button></div>`, 480);
+  $('#clrGo', m.el).onclick = () => { m.close(); clearDay(key, i); };
+}
+function clearDay(key, i){
+  const w = S.weeks[key]; if (!w || !w.d[i]) return;
+  const saved = Object.assign({}, w.d[i]), n = Object.values(saved).filter(v => v && v.trim()).length;
+  snapshot('Очистка дня: ' + dayTitle(key, i));
+  delete w.d[i]; tidyWeek(key); dirty(); save(); rerenderAfterDayChange();
+  toast(`Удалено записей: ${n}`, {label: 'Отменить', ms: 10000, fn: () => {
+    const ww = ensureWeek(key), d = ww.d[i] || (ww.d[i] = {}); let back = 0, busy = 0;
+    for (const t in saved){ if (d[t] && d[t].trim()){ busy++; continue; } d[t] = saved[t]; back++; }
+    tidyWeek(key); dirty(); save(); rerenderAfterDayChange();
+    toast(busy ? `Возвращено ${back}, занятое время не трогал: ${busy}` : `Возвращено записей: ${back}`);
+  }});
 }
 const plural = (n, a, b, c) => { const m10 = n%10, m100 = n%100; return m10===1 && m100!==11 ? a : m10>=2 && m10<=4 && (m100<12 || m100>14) ? b : c; };
 function copyPrevWeek(){
@@ -892,10 +1131,14 @@ function renderCalc(){
       <button class="btn ghost" id="cTpl" title="Заменить формулы этой недели шаблоном">Взять шаблон</button>
       <button class="btn ghost" id="cSaveTpl" title="Использовать эти формулы для новых недель">Сделать шаблоном</button>
     </div>
+    <div id="calcDays"></div>
     <div class="hint">N — занятий Пн–Пт, СБ — занятий в субботу, A, B, C… — строки расчёта. Пример: <span class="mono">2600*N-4200</span>, <span class="mono">3000*СБ</span>, <span class="mono">A+B+C-135000</span>.${virtual ? (cnt ? ' <b>В исходной таблице у этой недели не было расчёта.</b> Показан шаблон — нажмите «Взять шаблон», чтобы сохранить его для недели.' : ' Расчёт по шаблону сохранится в неделе с первой записью.') : ''}</div>`;
   const touch = () => { const ww = ensureWeek(key); ww.calcEdited = true; return ww; };
-  $$('#calcCard input').forEach(inp => inp.addEventListener('input', () => {
-    const ww = touch(); ww.calc[+inp.dataset.i][inp.dataset.k] = inp.value; save(); updateCalcResults(); refreshAccTables();
+  $$('#calcCard .calc input').forEach(inp => inp.addEventListener('input', () => {
+    const ww = touch(), li = +inp.dataset.i, ln = ww.calc[li], before = lineKey(ln, li);
+    ln[inp.dataset.k] = inp.value;
+    if (inp.dataset.k === 'name') renameDayCalcKey(ww, before, lineKey(ln, li));
+    save(); updateCalcResults(); refreshAccTables(); renderCalcDays();
   }));
   const moveW = d => { V.accWeek = ymd(addDays(pdate(key), d)); if (weekMonth(V.accWeek) !== V.accMonth){ V.accMonth = weekMonth(V.accWeek); renderAcc(); } else { renderCalc(); $$('#accWeeks tr[data-w]').forEach(x => x.classList.toggle('sel', x.dataset.w===V.accWeek)); } };
   $('#aPrev').onclick = () => moveW(-7);
@@ -905,22 +1148,40 @@ function renderCalc(){
   $$('#calcCard [data-del]').forEach(b => b.onclick = () => {
     const ww = touch(); const i = +b.dataset.del;
     if (!confirm(`Удалить строку ${letter(i)}? Буквы строк ниже сдвинутся.`)) return;
-    ww.calc.splice(i,1); save(); renderCalc(); refreshAccTables(true);
+    const gone = lineKey(ww.calc[i], i); ww.calc.splice(i,1);
+    if (!ww.calc.some((l,j) => lineKey(l,j) === gone)) dropDayCalcKey(ww, gone);
+    save(); renderCalc(); refreshAccTables(true);
   });
   $('#cAdd').onclick = () => { const ww = touch(); ww.calc.push({name:'', f:'N'}); save(); renderCalc(); refreshAccTables(true); };
   $('#cTpl').onclick = () => { if (!confirm('Заменить формулы этой недели шаблоном?')) return; const ww = touch(); ww.calc = clone(S.settings.template); save(); renderCalc(); refreshAccTables(true); };
   $('#cSaveTpl').onclick = () => { S.settings.template = clone(lines).map(l=>({name:l.name||'', f:l.f})); save(); toast('Шаблон обновлён — его получат новые недели'); };
   if (over) $('#cUseCnt').onclick = () => { delete S.weeks[key].n; delete S.weeks[key].nNote; save(); renderCalc(); refreshAccTables(true); };
   updateCalcResults();
+  renderCalcDays();
+}
+/* расчёт по дням в карточке недели: те же данные, что внизу дня в расписании */
+function renderCalcDays(){
+  const box = $('#calcDays'); if (!box) return;
+  const key = V.accWeek, w = S.weeks[key], nd = Math.max(S.settings.days, w && dayCnt(w, 5) ? 6 : 0), mon = pdate(key);
+  const rows = [...Array(nd)].map((_, i) => ({i, c: dayCnt(w, i), L: dayLines(w, i), cust: hasDayCalc(w, i)})).filter(r => r.c || r.cust);
+  if (!rows.length){ box.innerHTML = ''; return; }
+  box.innerHTML = `<h3 style="margin:16px 0 4px">По дням</h3>
+    <div class="tscroll"><table class="t dtab"><thead><tr><th>День</th><th class="n">Занятий</th><th>Формула дня</th><th class="n">Начислено</th></tr></thead><tbody>
+    ${rows.map(r => `<tr class="click" data-dce="${r.i}" title="Изменить расчёт дня"><td>${DAY[r.i]} ${addDays(mon, r.i).getDate()}</td><td class="n">${r.c}</td>
+      <td class="mono small">${r.L.map(l => `<span class="${l.custom?'pill':''}" style="${l.custom?'background:var(--accent-soft);color:var(--accent)':'color:var(--muted)'}">${esc(l.name)}: ${esc((l.custom ? l.f : rateStr(l.rate)+'*N').replace(/\*/g,'×'))}</span>`).join(' ')}</td>
+      <td class="n">${fmtMoney(r.L.reduce((a,l) => a + l.v, 0))}</td></tr>`).join('')}</tbody></table></div>
+    <div class="hint" style="margin-top:4px">Нажмите на день, чтобы поменять его формулу. Выделенные формулы — свой расчёт дня; разница уже учтена в строках недели выше и в итогах месяца. Недельные вычеты по дням не делятся.</div>`;
+  $$('[data-dce]', box).forEach(tr => tr.onclick = () => openDayCalc(key, +tr.dataset.dce));
 }
 function updateCalcResults(){
   if (!$('#calcCard')) return;
   const w = S.weeks[V.accWeek];
-  const tmp = w && w.calc ? w : {d: (w&&w.d)||{}, calc: S.settings.template, n: w && w.n};
-  const res = calcWeek(tmp);
+  const tmp = w && w.calc ? w : {d: (w&&w.d)||{}, calc: S.settings.template, n: w && w.n, dcalc: w && w.dcalc};
+  const res = calcWeek(tmp), dl = dayDeltas(tmp);
   res.forEach((r,i) => { const el = $(`[data-res="${i}"]`); if (!el) return;
     el.className = 'v' + (r.err ? ' err' : r.v<0 ? ' neg' : '');
-    el.textContent = r.err ? 'ошибка: '+r.err : fmtMoney(r.v); });
+    el.textContent = r.err ? 'ошибка: '+r.err : fmtMoney(r.v) + (dl[i] ? ' *' : '');
+    el.title = dl[i] ? 'Включая свой расчёт отдельных дней: ' + (dl[i] > 0 ? '+' : '') + fmtMoney(dl[i]) + ' (см. «По дням»)' : ''; });
   const n = $('#cN'); if (n) n.textContent = weekN(w);
 }
 
@@ -1338,7 +1599,7 @@ function renderData(){
   $$('#tpl [data-del]').forEach(b => b.onclick = () => { st.template.splice(+b.dataset.del,1); save(); renderData(); });
   $('#tAdd').onclick = () => { st.template.push({name:'', f:'N'}); save(); renderData(); };
   $('#rnGo').onclick = () => { const a = $('#rnFrom').value, b = $('#rnTo').value.trim(); if (!a||!b) return; snapshot('Переименование строки «'+a+'»'); let n=0;
-    Object.values(S.weeks).forEach(w => (w.calc||[]).forEach(l => { if (l.name===a){ l.name=b; n++; } })); st.template.forEach(l=>{ if(l.name===a) l.name=b; }); save(); renderData(); toast('Переименовано строк: '+n); };
+    Object.values(S.weeks).forEach(w => { if ((w.calc||[]).some(l => l.name===a)) renameDayCalcKey(w, a, b); (w.calc||[]).forEach(l => { if (l.name===a){ l.name=b; n++; } }); }); st.template.forEach(l=>{ if(l.name===a) l.name=b; }); save(); renderData(); toast('Переименовано строк: '+n); };
   const grid = () => { const f = Math.max(0,Math.min(23,+$('#sFrom').value||0)), t = Math.max(f,Math.min(23,+$('#sTo').value||f)); st.from=f; st.to=t; st.days = $('#sSat').checked?6:5; save(); };
   $('#sRate').onchange = e => { st.satRate = Math.max(0, +e.target.value || 0); save(); };
   $('#sFrom').onchange = grid; $('#sTo').onchange = grid; $('#sSat').onchange = grid;
@@ -1440,9 +1701,9 @@ function buildXLSX(){
     if (w.n!=null) cnt[nd+4] = `вручную (по расписанию ${weekdayCount(w)})`;
     const sbRef = nd >= 6 ? `$G$${cntRow}` : '0';
     R1.push(cnt);
-    const res = calcWeek(w);
+    const res = calcWeek(w), dlt = dayDeltas(w);
     (w.calc||[]).forEach((l,i) => { const row = first - 1 + i; const ref = j => `$${vCol}$${first + j}`;
-      let f; try { f = formulaToExcel(l.f, `$${vCol}$${cntRow}`, ref, sbRef); } catch(e){ f = null; }
+      let f; try { f = formulaToExcel(l.f, `$${vCol}$${cntRow}`, ref, sbRef); if (dlt[i]) f = `(${f})+(${dlt[i]})`; } catch(e){ f = null; }
       R1[row][nd+2] = letter(i)+' · '+(l.name||'');
       R1[row][nd+3] = f!=null ? {f, v: res[i].v, s:2} : 'ошибка: '+l.f;
     });
@@ -1451,8 +1712,8 @@ function buildXLSX(){
   });
   // Лист 2: Учёт
   const R2 = [[B('Неделя'), B('Начало'), B('Месяц'), B('N'), B('СБ'), B('Строка'), B('Название'), B('Формула'), B('Значение')]];
-  keys.forEach(key => { const w = S.weeks[key]; if (!(w.calc||[]).length) return; const res = calcWeek(w); const start = R2.length + 1;
-    w.calc.forEach((l,i) => { const r = start + i; let f; try { f = formulaToExcel(l.f, `$D$${start}`, j => `$I$${start+j}`, `$E$${start}`); } catch(e){ f=null; }
+  keys.forEach(key => { const w = S.weeks[key]; if (!(w.calc||[]).length) return; const res = calcWeek(w), dlt = dayDeltas(w); const start = R2.length + 1;
+    w.calc.forEach((l,i) => { const r = start + i; let f; try { f = formulaToExcel(l.f, `$D$${start}`, j => `$I$${start+j}`, `$E$${start}`); if (dlt[i]) f = `(${f})+(${dlt[i]})`; } catch(e){ f=null; }
       R2.push([weekShort(key), {v:serial(pdate(key)), s:3}, monthName(weekMonth(key)), i===0 ? {v: weekN(w)} : {f:`D${start}`, v: weekN(w)}, i===0 ? {v: satCount(w)} : {f:`E${start}`, v: satCount(w)}, letter(i), l.name||'', l.f, f!=null?{f, v:res[i].v, s:2}:'ошибка']); }); });
   // Лист 3: Занятия
   const R3 = [[B('Дата'), B('День'), B('Время'), B('Запись'), B('Ребёнок'), B('Месяц')]];
@@ -1745,7 +2006,7 @@ function openDayInfo(ds){
     ${evs.length ? `<div class="evstrip">${evs.map(e=>`<button class="evchip ${e.off?'off':''}" data-ev="${e.id}">${e.time?esc(e.time)+' · ':''}${esc(e.title)}${e.off?' · приёма нет':''}</button>`).join('')}</div>` : ''}
     <div style="margin-top:12px">${list.length ? `<div class="row" style="margin-bottom:6px"><b>${list.length} ${plural(list.length,'ребёнок','ребёнка','детей')}</b></div>
       <table class="t"><tbody>${list.map(x=>`<tr><td class="muted" style="width:60px">${x.t}</td><td>${esc(x.txt)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted">Занятий нет.</div>'}</div>
-    ${list.length && i <= 5 ? `<div class="card dacc" style="margin-top:12px;padding:10px 12px">${dayAccHTML(w, i)}</div>` : ''}
+    ${(list.length || hasDayCalc(w, i)) && i <= 5 ? `<div class="card dacc" style="margin-top:12px;padding:10px 12px">${dayAccHTML(w, i, canGrid ? key : null)}</div>` : ''}
     <div class="row" style="margin-top:14px">
       <button class="btn" data-add>+ Событие</button><span class="sp"></span>
       ${canGrid && list.length ? '<button class="btn" data-send>Отправить</button>' : ''}
@@ -1753,6 +2014,7 @@ function openDayInfo(ds){
     </div>`, 520);
   const el = m.el;
   $$('[data-nav]', el).forEach(b => b.onclick = () => { m.close(); openDayInfo(ymd(addDays(d, +b.dataset.nav))); });
+  bindDayCalcButtons(el, () => m.close());
   $$('[data-ev]', el).forEach(b => b.onclick = () => { m.close(); openEvent(evList().find(e=>e.id===b.dataset.ev)); });
   $('[data-add]', el).onclick = () => { m.close(); openEvent({from: ds}); };
   const sd = $('[data-send]', el); if (sd) sd.onclick = () => { m.close(); openSend({mode:'day', week:key, day:i}); };
@@ -2066,13 +2328,14 @@ function showImportDialog(res, fname){
    При синхронизации берётся более свежая версия каждой недели/события; данные при этом всегда есть и на устройстве. */
 let LJ = null;
 const cellsOf = w => { const m = {}; for (const i in (w.d||{})) for (const t in w.d[i]) { const v = w.d[i][t]; if (v && String(v).trim()) m[i+'|'+t] = v; } return m; };
-const fieldsJ = w => { const {u, cu, fu, d, ...r} = w; return JSON.stringify(r); };
+const fieldsJ = w => { const {u, cu, fu, d, dcalc, dcu, ...r} = w; return JSON.stringify(r); };
+const dcJ = w => JSON.stringify(w.dcalc || null); // формулы дней синхронизируются отдельно, со своей меткой времени dcu
 const eJ = e => { const {u, ...r} = e; return JSON.stringify(r); };
 const sharedSettings = () => ({template: S.settings.template, days: S.settings.days, satRate: S.settings.satRate, from: S.settings.from, to: S.settings.to});
 function initStamp(){
   S.tomb = S.tomb || {}; S.evTomb = S.evTomb || {};
-  LJ = {c:{}, f:{}, e:{}, s: JSON.stringify(sharedSettings())};
-  for (const k in S.weeks){ LJ.c[k] = cellsOf(S.weeks[k]); LJ.f[k] = fieldsJ(S.weeks[k]); }
+  LJ = {c:{}, f:{}, dc:{}, e:{}, s: JSON.stringify(sharedSettings())};
+  for (const k in S.weeks){ LJ.c[k] = cellsOf(S.weeks[k]); LJ.f[k] = fieldsJ(S.weeks[k]); LJ.dc[k] = dcJ(S.weeks[k]); }
   for (const e of evList()) LJ.e[e.id] = eJ(e);
 }
 function stampChanges(){
@@ -2083,9 +2346,10 @@ function stampChanges(){
     const w = S.weeks[k], cur = cellsOf(w), prev = LJ.c[k] || {}; let chg = false;
     for (const key of new Set([...Object.keys(cur), ...Object.keys(prev)])) if (cur[key] !== prev[key]){ (w.cu || (w.cu = {}))[key] = now; chg = true; }
     const fj = fieldsJ(w); if (fj !== LJ.f[k]){ w.fu = now; chg = true; }
-    if (chg){ w.u = now; LJ.c[k] = cur; LJ.f[k] = fj; delete S.tomb[k]; ch = true; }
+    const dj = dcJ(w); if (dj !== (LJ.dc[k] || 'null')){ w.dcu = now; chg = true; }
+    if (chg){ w.u = now; LJ.c[k] = cur; LJ.f[k] = fj; LJ.dc[k] = dj; delete S.tomb[k]; ch = true; }
   }
-  for (const k in LJ.c) if (!S.weeks[k]){ S.tomb[k] = now; delete LJ.c[k]; delete LJ.f[k]; ch = true; }
+  for (const k in LJ.c) if (!S.weeks[k]){ S.tomb[k] = now; delete LJ.c[k]; delete LJ.f[k]; delete LJ.dc[k]; ch = true; }
   const ids = new Set();
   for (const e of evList()){ ids.add(e.id); const j = eJ(e); if (LJ.e[e.id] !== j){ e.u = now; LJ.e[e.id] = j; delete S.evTomb[e.id]; ch = true; } }
   for (const id in LJ.e) if (!ids.has(id)){ S.evTomb[id] = now; delete LJ.e[id]; ch = true; }
@@ -2126,11 +2390,18 @@ function mergeWeek(a, b, tomb){
   }
   const fa = A.fu || 0, fb = B.fu || 0, fuM = Math.max(fa, fb);
   const src = !a ? B : !b ? A : (fb > fa ? B : A);
-  const {u, cu: _c, fu: _f, d: _d, ...fields} = src;
+  const {u, cu: _c, fu: _f, d: _d, dcalc: _dc, dcu: _du, ...fields} = src;
   const w = Object.assign({}, tomb && tomb >= fuM ? {} : fields, {d, cu});
   if (fuM) w.fu = fuM;
+  // формулы дней: берём сторону с более поздним dcu; если меток нет (старые устройства) — как остальные поля
+  const da = A.dcu || 0, db = B.dcu || 0, dcuM = Math.max(da, db);
+  const dsrc = !a ? B : !b ? A : (db > da ? B : da > db ? A : src);
+  if (dsrc.dcalc && Object.keys(dsrc.dcalc).length && !(tomb && tomb >= Math.max(dcuM, dsrc === src ? fuM : 0))) w.dcalc = dsrc.dcalc;
+  if (dcuM) w.dcu = dcuM;
+  // формулы взяты не с той стороны, что остальные поля: делаем поля недели «новее», чтобы старая версия приложения приняла их целиком
+  if (a && b && dsrc !== src && dcJ(dsrc) !== dcJ(src)) w.fu = fuM + 1;
   w.u = Math.max(A.u || 0, B.u || 0);
-  if (!Object.keys(d).length && !w.notes && !w.calcEdited && w.n == null) return null;
+  if (!Object.keys(d).length && !w.notes && !w.calcEdited && !w.dcalc && w.n == null) return null;
   return w;
 }
 function applyShared(d){
@@ -2243,7 +2514,7 @@ async function syncConnect(mode, key, repoField){
       snapshot('Перед подключением синхронизации'); applyShared(remote.data); S.updatedAt = Date.now(); persist();
     } else {
       snapshot('Перед первой отправкой в облако');
-      const now = Date.now(); Object.values(S.weeks).forEach(w => { w.u = now; w.fu = now; w.cu = {}; Object.keys(cellsOf(w)).forEach(k => w.cu[k] = now); }); evList().forEach(e => e.u = now); S.settingsU = now; initStamp(); persist();
+      const now = Date.now(); Object.values(S.weeks).forEach(w => { w.u = now; w.fu = now; if (w.dcalc) w.dcu = now; w.cu = {}; Object.keys(cellsOf(w)).forEach(k => w.cu[k] = now); }); evList().forEach(e => e.u = now); S.settingsU = now; initStamp(); persist();
     }
     setSyncCfg(c);
     await syncNow();
