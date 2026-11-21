@@ -296,10 +296,11 @@ main,section,.card{min-width:0}
 .notes-ev i.off{background:var(--off-ink)}
 .notes-ev span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 /* спокойная панель действий */
-.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px auto 0;max-width:640px}
+.tools{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px auto 0;max-width:640px}
 .tools button{display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:7px 4px;font-size:12px;color:var(--ink2)}
 .tools button:hover{border-color:var(--muted)}
 .tools button:disabled{opacity:.4}
+.tools #wDay svg{fill:currentColor}
 .tools svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .segfull{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
 .segfull button{border:0;background:none;padding:8px 6px;color:var(--ink2);font-size:14px}
@@ -422,7 +423,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-21.1';
+const APP_VERSION = '2026-11-21.2';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -774,10 +775,9 @@ function renderWeek(){
   </div>
   ${wev.length ? `<div class="notes-ev">${wev.map(e=>`<button data-ev="${e.id}" title="${esc(evLine(e))}"><i class="${e.off?'off':''}"></i><span>${esc(evDates(e))}${e.time?', '+esc(e.time):''} · ${esc(e.title)}${e.off?' · приёма нет':''}</span></button>`).join('')}</div>` : ''}
   <div class="tools">
-    <button id="wCopy" ${hasPrev?'':'disabled'} title="Заполнить пустые ячейки по прошлой неделе"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4"/></svg>Как прошлая</button>
     <button id="wCopyTo" ${empty?'disabled':''} title="Скопировать или перенести неделю либо день"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Копировать</button>
-    <button id="wEv"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M12 13v5M9.5 15.5h5"/></svg>Событие</button>
     <button id="wShare"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>Отправить</button>
+    <button id="wDay" title="Действия с днём: формула, отправка, копирование, очистка"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></svg>День</button>
   </div>
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
     ${dates.map((d,i)=>`<th class="${dcls(d,i)}"><button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><button class="dmore" data-dm="${i}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
@@ -786,7 +786,7 @@ function renderWeek(){
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=>`<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
   <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
   <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" list="kidnames" autocomplete="off"><button class="snd info ${val(V.day,t)?'on':''}" title="Карточка ребёнка: занятия и отправка расписания" tabindex="-1"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></svg></button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
-  <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span><button class="dmore" data-dm="${V.day}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button></div><div class="dacc" data-dacc="${V.day}"></div></div>
+  <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <section>
     <div class="card"><h3>Заметки к неделе</h3><textarea id="wNotes" rows="${Math.max(4, ((w&&w.notes)||'').split('\n').length+1)}" placeholder="Кто болеет, переносы, новенькие…">${esc(w&&w.notes||'')}</textarea></div>
   </section>`;
@@ -799,11 +799,10 @@ function renderWeek(){
   addSwipe($('.gridwrap'), () => go('week', {week: ymd(addDays(mon,7))}), () => go('week', {week: prevKey}));
   addSwipe($('#dayTabs'), () => go('week', {week: ymd(addDays(mon,7)), day: V.day}), () => go('week', {week: prevKey, day: V.day}));
   $$('.wDate').forEach(inp => inp.onchange = e => { if (e.target.value){ const d = pdate(e.target.value), i = (d.getDay()+6)%7; go('week', {week: ymd(mondayOf(d)), day: i < S.settings.days ? i : 0}); } });
-  $('#wCopy').onclick = copyPrevWeek;
   $('#wN').onclick = () => go('acc', {accWeek: key, accMonth: weekMonth(key)});
   $('#wShare').onclick = () => openSend({mode:'week', week:key, day:V.day});
   $('#wCopyTo').onclick = () => openCopy();
-  $('#wEv').onclick = () => openEvent({from: ymd(dates[V.day] || mon)});
+  $('#wDay').onclick = e => { e.stopPropagation(); openDayMenu(key, V.day); };
   $$('#main [data-ev]').forEach(b => b.onclick = () => openEvent(evList().find(e=>e.id===b.dataset.ev)));
   $$('#main .dayhd').forEach(b => b.onclick = () => openSend({mode:'day', week:key, day:+b.dataset.day}));
   $$('#dayTabs button').forEach(b => b.onclick = () => { V.day = +b.dataset.i; renderWeek(); });
@@ -1050,19 +1049,29 @@ function bindRowSwipe(row){
 }
 /* ---- меню дня и очистка дня ---- */
 function openDayMenu(key, i){
-  const w = S.weeks[key], c = dayCnt(w, i), canCalc = dayBase(w, i).some(b => !b.virtual);
-  const m = modal(`${mhead(esc(dayTitle(key, i)))}
-    <div class="small muted" style="margin-top:4px">${c ? c + ' ' + plural(c,'запись','записи','записей') : 'записей нет'}${hasDayCalc(w, i) ? ' · свой расчёт дня' : ''}</div>
+  const mon = pdate(key), nd = S.settings.days;
+  const m = modal(`<div id="dmBox"></div>`, 440);
+  function draw(){
+    const w = S.weeks[key], c = dayCnt(w, i), canCalc = dayBase(w, i).some(b => !b.virtual);
+    $('#dmBox', m.el).innerHTML = `${mhead(esc(dayTitle(key, i)))}
+    <div class="segfull" id="dmDays" style="margin-top:10px">${[...Array(nd)].map((_, k) => `<button data-d="${k}" class="${k===i?'on':''}">${DAY[k]} ${addDays(mon, k).getDate()}<small style="display:block;font-size:11px;opacity:.7">${dayCnt(w, k) || ''}</small></button>`).join('')}</div>
+    <div class="small muted" style="margin-top:8px">${c ? c + ' ' + plural(c,'запись','записи','записей') : 'записей нет'}${hasDayCalc(w, i) ? ' · своя формула дня' : ''}</div>
     <div class="menu">
-      ${canCalc ? '<button class="btn" data-a="calc">Изменить расчёт дня</button>' : ''}
+      ${canCalc ? '<button class="btn" data-a="calc">Изменить формулу дня</button>' : ''}
       <button class="btn" data-a="send" ${c ? '' : 'disabled'}>Отправить расписание дня</button>
+      <button class="btn" data-a="copy" ${c ? '' : 'disabled'}>Копировать или перенести день…</button>
       <hr style="margin:4px 0">
       <button class="btn danger" data-a="clear" ${c ? '' : 'disabled'}>Очистить записи дня…</button>
-    </div>`, 420);
-  $$('[data-a]', m.el).forEach(b => b.onclick = () => { m.close();
-    if (b.dataset.a === 'calc') openDayCalc(key, i);
-    else if (b.dataset.a === 'send') openSend({mode: 'day', week: key, day: i});
-    else confirmClearDay(key, i); });
+    </div>
+    <div class="hint">Одну запись удалить быстрее свайпом влево по строке${isTouch() ? '' : ' или корзиной при наведении мыши'}.</div>`;
+    $$('[data-d]', m.el).forEach(b => b.onclick = () => { i = +b.dataset.d; if (V.view === 'week' && V.week === key && V.day !== i){ V.day = i; renderWeek(); } draw(); });
+    $$('[data-a]', m.el).forEach(b => b.onclick = () => { m.close();
+      if (b.dataset.a === 'calc') openDayCalc(key, i);
+      else if (b.dataset.a === 'send') openSend({mode: 'day', week: key, day: i});
+      else if (b.dataset.a === 'copy'){ V.day = i; openCopy('day'); }
+      else confirmClearDay(key, i); });
+  }
+  draw();
 }
 function confirmClearDay(key, i){
   const w = S.weeks[key], day = (w && w.d[i]) || {};
@@ -1816,9 +1825,9 @@ function undoLast(){
   localStorage.removeItem(KEY+'-undo'); dirty(); save(); render(); toast('Отменено: '+u.label);
 }
 const stripCourse = t => { const x = t.trim(); if (/\d+\s*\/\s*\d+\s*$/.test(x)) return x.replace(/\s*\d+\s*\/\s*\d+\s*$/,'').trim(); if (/\d[.,]\d+$/.test(x)) return x; return x.replace(/(\S)\s*\d{1,2}$/,'$1').trim(); };
-function openCopy(){
+function openCopy(what){
   const src = V.week, mon = pdate(src);
-  const st = {what:'week', day:V.day||0, to: ymd(addDays(mon,7)), mode:'empty', strip:true, move:false};
+  const st = {what: what === 'day' ? 'day' : 'week', day:V.day||0, to: ymd(addDays(mon, what === 'day' ? (V.day||0) + 7 : 7)), mode:'empty', strip:true, move:false};
   const m = modal(`${mhead('Копировать расписание')}
     <div class="small muted" style="margin-top:4px">Откуда: неделя ${weekTitle(src, S.settings.days)}</div>
     <div class="form">
