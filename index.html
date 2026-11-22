@@ -365,7 +365,16 @@ nav.tabs button{position:relative}
 .hhead .savestat{margin:0;justify-content:flex-start}
 .hday{margin-top:12px}
 .hlist{margin-top:6px;display:grid}
-.hlist .hr{display:flex;gap:12px;align-items:baseline;border:0;border-top:1px solid var(--line2);background:none;text-align:left;padding:8px 2px;width:100%}
+.hlist .hr{display:flex;align-items:center;gap:4px;border-top:1px solid var(--line2);width:100%}
+.hlist .hmain{display:flex;gap:12px;align-items:baseline;flex:1;min-width:0;border:0;background:none;text-align:left;padding:8px 2px;color:inherit;font:inherit}
+.hlist .hks{flex:none;width:36px;height:34px;display:grid;place-items:center;border:0;background:none;border-radius:8px;color:var(--muted);padding:0}
+.hlist .hks:hover{background:var(--line2);color:var(--ink)}
+.hlist .hks svg,.hsb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hcnt{display:flex;align-items:center;gap:8px}
+.hsendg{display:flex;gap:4px}
+@media (max-width:560px){.hday > .row:first-child{flex-wrap:wrap}.hday > .row:first-child .hcnt{width:100%;justify-content:space-between;margin-top:4px}}
+.hsb{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 9px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.hsb:hover{border-color:var(--muted);color:var(--ink)}
 .hlist .hr:first-child{border-top:0}
 .hlist .hr.nx{background:var(--accent-soft);border-radius:8px;border-top-color:transparent}
 .hlist .ht{width:46px;flex:none;color:var(--muted);font-variant-numeric:tabular-nums;font-size:14px}
@@ -507,7 +516,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-22.4';
+const APP_VERSION = '2026-11-22.5';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -857,17 +866,19 @@ function renderHome(){
   const evs = eventsBetween(tds, ymd(addDays(t, 14)));
   const ending = w ? entries(w).map(e => ({e, p: parseEntry(e.txt)})).filter(x => { const m = /^(\d+)\/(\d+)$/.exec(x.p.suffix||''); return m && +m[1] === +m[2]; }) : [];
   const wIsCur = wk === ymd(mondayOf(t));
+  const wa = pdate(wk), wb = addDays(wa, 5), wkShort = wa.getMonth() === wb.getMonth() ? `${wa.getDate()}–${wb.getDate()} ${MS[wa.getMonth()]}` : `${wa.getDate()} ${MS[wa.getMonth()]} – ${wb.getDate()} ${MS[wb.getMonth()]}`;
+  const dWeek = ymd(mondayOf(d0)), dIdx = (d0.getDay() + 6) % 7;
   $('#main').innerHTML = `
   <div class="hhead"><h1>${DAYL[(t.getDay()+6)%7].replace(/^./, c => c.toUpperCase())}, ${t.getDate()} ${MG[t.getMonth()]}</h1><div class="savestat" id="saveStat" aria-live="polite"></div></div>
   <section class="card hday">
-    <div class="row"><h3 style="margin:0">${ymd(d0) === tds ? 'Сегодня' : lbl.charAt(0).toUpperCase() + lbl.slice(1) + ', ' + d0.getDate() + ' ' + MG[d0.getMonth()]}</h3><span class="sp"></span><span class="small muted">${list.length ? list.length + ' ' + plural(list.length,'занятие','занятия','занятий') : ''}</span></div>
+    <div class="row"><h3 style="margin:0">${ymd(d0) === tds ? 'Сегодня' : lbl.charAt(0).toUpperCase() + lbl.slice(1) + ', ' + d0.getDate() + ' ' + MG[d0.getMonth()]}</h3><span class="sp"></span><span class="hcnt"><span class="small muted">${list.length ? list.length + ' ' + plural(list.length,'занятие','занятия','занятий') : ''}</span>${list.length ? `<span class="hsendg"><button class="hsb" id="hSendDay" title="Отправить расписание дня"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><span>День</span></button><button class="hsb" id="hSendWeek" title="Отправить расписание недели"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><span>Неделя</span></button></span>` : ''}</span></div>
     ${ymd(d0) !== tds && list.length ? '<div class="small muted">Сегодня занятий нет</div>' : ''}
-    ${list.length ? `<div class="hlist">${list.map((x, n) => `<button class="hr${n === nextIdx ? ' nx' : ''}" data-kid="${esc(x.key)}"><span class="ht">${x.t}</span><span class="hn"><span>${esc(x.txt)}</span>${goalOf(x.txt) ? `<small>${esc(goalOf(x.txt))}</small>` : ''}</span></button>`).join('')}</div>` : '<div class="muted small" style="padding:6px 0">В ближайшие две недели занятий нет</div>'}
+    ${list.length ? `<div class="hlist">${list.map((x, n) => `<div class="hr${n === nextIdx ? ' nx' : ''}"><button class="hmain" data-kid="${esc(x.key)}"><span class="ht">${x.t}</span><span class="hn"><span>${esc(x.txt)}</span></span></button>${x.key ? `<button class="hks" data-ks="${esc(x.key)}" title="Отправить расписание ребёнка" aria-label="Отправить расписание: ${esc(x.txt)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button>` : ''}</div>`).join('')}</div>` : '<div class="muted small" style="padding:6px 0">В ближайшие две недели занятий нет</div>'}
     <div class="row" style="margin-top:8px"><span class="sp"></span><button class="btn ghost" id="hWeek">Открыть ${wIsCur ? 'неделю' : 'следующую неделю'} ›</button></div>
   </section>
   <section class="htiles">
     <button class="htile" data-go="week"><span class="k">${wIsCur ? 'Эта неделя' : 'След. неделя'} · Пн–Пт</span><b>${weekdayCount(w)}</b><span class="s">${plural(weekdayCount(w),'занятие','занятия','занятий')}${satCount(w) ? ' · Сб ' + satCount(w) : ''}</span></button>
-    <button class="htile" data-go="acc"><span class="k">Сумма недели</span><b>${wInc == null ? '—' : fmtNum(wInc)}</b><span class="s">${esc(payName)}</span></button>
+    <button class="htile" data-go="acc"><span class="k">Сумма недели</span><b>${wInc == null ? '—' : fmtNum(wInc)}</b><span class="s" title="Неделя ${wkShort}, Пн–Пт">${wkShort} · ${weekdayCount(w)} ${plural(weekdayCount(w),'занятие','занятия','занятий')}</span></button>
     <button class="htile" data-go="accm"><span class="k">${monthName(mKey)}</span><b>${mInc == null ? agg.sumN : fmtNum(mInc)}</b><span class="s">${mInc == null ? plural(agg.sumN,'занятие','занятия','занятий') + ' Пн–Пт' : 'сумма · ' + agg.sumN + ' ' + plural(agg.sumN,'занятие','занятия','занятий')}</span></button>
     <button class="htile" data-go="stats"><span class="k">В ведении</span><b>${obs.on.length}</b><span class="s">${obs.off.length ? 'не под наблюдением: ' + obs.off.length : 'детей'}</span></button>
   </section>
@@ -877,7 +888,9 @@ function renderHome(){
   </section>` : ''}`;
   renderSaveStat();
   $('#hWeek').onclick = () => go('week', {week: wk, day: null});
-  $$('#main [data-kid]').forEach(b => b.onclick = () => { if (b.dataset.kid) openKid(b.dataset.kid, ymd(mondayOf(d0))); });
+  $$('#main [data-kid]').forEach(b => b.onclick = () => { if (b.dataset.kid) openKid(b.dataset.kid, dWeek); });
+  $$('#main [data-ks]').forEach(b => b.onclick = () => openSend({mode: 'kid', kid: b.dataset.ks, week: dWeek}));
+  if ($('#hSendDay')){ $('#hSendDay').onclick = () => openSend({mode: 'day', week: dWeek, day: dIdx}); $('#hSendWeek').onclick = () => openSend({mode: 'week', week: dWeek}); }
   $$('#main [data-ev]').forEach(b => b.onclick = () => openEvent(evList().find(e => e.id === b.dataset.ev)));
   $$('#main [data-go]').forEach(b => b.onclick = () => { const g = b.dataset.go;
     if (g === 'week') go('week', {week: wk, day: null}); else if (g === 'acc') go('acc', {accWeek: wk, accMonth: weekMonth(wk)}); else if (g === 'accm') go('acc', {accMonth: mKey, accWeek: null}); else go('stats'); });
