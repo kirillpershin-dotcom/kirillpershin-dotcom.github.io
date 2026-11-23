@@ -370,7 +370,7 @@ nav.tabs button{position:relative}
 .cw .rdx{right:36px}
 .daylist .snd{margin-right:2px}
 .snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.cell[data-filled]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.cell[data-filled]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .cell.move-src{opacity:.16;pointer-events:none;caret-color:transparent}
 .cell.move-target{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent)!important}
 .cell.move-blocked{background:var(--warn-soft)!important;box-shadow:inset 0 0 0 2px var(--warn)!important}
@@ -550,7 +550,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-23.2';
+const APP_VERSION = '2026-11-23.3';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1342,8 +1342,8 @@ function bindTimeMove(inp, key){
   const activate = e => { if(st.phase!=='pending')return; st.phase='dragging'; inp.blur(); inp.classList.add('move-src'); row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging'); const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value; document.body.appendChild(ghost); st.ghost=ghost; try{inp.setPointerCapture(e.pointerId)}catch(_){} if(navigator.vibrate)navigator.vibrate(12); update(e.clientX,e.clientY); };
   inp.addEventListener('contextmenu',e=>{if(inp.dataset.filled)e.preventDefault()});
   inp.addEventListener('selectstart',e=>{if(st.phase==='pending'||st.phase==='dragging')e.preventDefault()});
-  inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; finish(); row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
-  inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'){if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx)finish('cancelled');return;} if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
+  inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; finish(); row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,lastY:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
+  inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx){clearTimeout(st.timer);st.phase='scrolling';row.classList.remove('drag-pending');} if(st.phase==='scrolling'){if(e.cancelable)e.preventDefault();window.scrollBy({top:st.lastY-e.clientY,behavior:'instant'});st.lastY=e.clientY;return;} if(st.phase==='pending')return; if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
   const drop=e=>{ if(e.pointerId!==st.id)return; if(st.phase!=='dragging'){finish('cancelled');return;} st.phase='dropping'; const target=st.target, fromI=+inp.dataset.i,fromT=inp.dataset.t,toI=target&&+target.dataset.i,toT=target&&target.dataset.t; finish(target?'completed':'cancelled'); if(target)moveEntry(key,fromI,fromT,toI,toT); };
   inp.addEventListener('pointerup',drop); inp.addEventListener('pointercancel',()=>finish('cancelled')); inp.addEventListener('lostpointercapture',()=>{if(st.phase==='dragging')finish('cancelled')});
 }
