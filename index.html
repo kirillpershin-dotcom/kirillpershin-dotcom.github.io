@@ -258,6 +258,11 @@ table.grid tfoot td.time{border-top:1px solid var(--line);vertical-align:top;pad
 .dacc .ln span:last-child{font-variant-numeric:tabular-nums}
 .dacc .ln.tot{border-top:1px solid var(--line);margin-top:3px;padding-top:3px;color:var(--ink);font-weight:650}
 .dacc .ln.tot span:first-child{color:var(--ink)}
+.dcompact{display:flex;justify-content:space-between;gap:8px;align-items:baseline;font-variant-numeric:tabular-nums}
+.dcompact span{font-weight:650;color:var(--ink)}
+.daccmore{margin-top:3px;font-size:12px}
+.daccmore summary{font-size:12px;color:var(--accent);cursor:pointer}
+.daccmore[open] summary{margin-bottom:4px}
 .dfoot{display:none}
 @media (max-width:760px){.dfoot{display:block;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}.dfoot .dacc{font-size:14px}}
 .pill.link{border:0;cursor:pointer}
@@ -353,17 +358,23 @@ nav.tabs button{position:relative}
 .sdot.ok{background:#3aa765}.sdot.busy{background:var(--accent)}.sdot.offline{background:#b8b8bd}.sdot.err{background:var(--bad)}
 @media (min-width:761px){.sdot{top:2px;right:0}}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
-/* запись открывает карточку, свайп до конца удаляет (2026-11-22.4) */
-.cell[readonly]{cursor:pointer;caret-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.cell[readonly]:focus{background:transparent;box-shadow:none}
-.cell[readonly]:hover{background:var(--line2)}
-.cw .rdx{right:4px}
+/* редактирование записи, карточка справа и перенос удержанием */
+.cw .snd{right:4px}
+.cw .rdx{right:36px}
+.daylist .snd{margin-right:2px}
+.snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cell.move-src{opacity:.42;pointer-events:none;caret-color:transparent}
+.cell.move-target{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent)!important}
+.swr:has(.cell.move-src){user-select:none}
 .swr.full .rdel{width:100%!important;justify-content:flex-start;padding-left:18px}
 .kslot{margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
 /* главный экран, ведение, итог недели, суббота (2026-11-22.3) */
 .hhead{margin-top:18px;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .hhead .savestat{margin:0;justify-content:flex-start}
 .hday{margin-top:12px}
+.hnav{display:grid;grid-template-columns:40px minmax(0,1fr) 40px;gap:8px;align-items:center}
+.hnav h3{text-align:center;margin:0}
+.hnav .nav{width:40px;height:36px;border:1px solid var(--line);background:var(--panel);border-radius:9px;font-size:19px;line-height:1}
 .hlist{margin-top:6px;display:grid}
 .hlist .hr{display:flex;align-items:center;gap:4px;border-top:1px solid var(--line2);width:100%}
 .hlist .hmain{display:flex;gap:12px;align-items:baseline;flex:1;min-width:0;border:0;background:none;text-align:left;padding:8px 2px;color:inherit;font:inherit}
@@ -479,6 +490,15 @@ table.grid .dedit .dlong{display:none}
 .dcgrid .v.err{color:var(--bad);font-size:12px}
 .dcgrid .cust{color:var(--accent)}
 @media (max-width:520px){.dcgrid{grid-template-columns:minmax(0,1fr) 88px 34px}.dcgrid .nm{grid-column:1/4}}
+.dcquick{display:grid;gap:7px;margin-top:12px}
+.dcquickrow{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 74px;gap:7px;align-items:end;padding:8px 0;border-bottom:1px solid var(--line2)}
+.dcquickrow:last-child{border-bottom:0}
+.dcquickrow .nm{font-weight:600;min-width:0}.dcquickrow .nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.dcquickrow label{display:grid;gap:2px;font-size:11px;color:var(--muted)}
+.dcquickrow input{width:100%;min-width:0;border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:6px 7px;font:inherit}
+.dcquickrow b{text-align:right;font-variant-numeric:tabular-nums;padding-bottom:7px}
+.dcadvanced{margin-top:10px}.dcadvanced summary{cursor:pointer;color:var(--accent);font-size:13px}.dcadvanced .dcgrid{margin-top:8px}
+@media (max-width:520px){.dcquickrow{grid-template-columns:1fr 1fr 72px}.dcquickrow .nm{grid-column:1/4}.dcquickrow b{padding-bottom:7px}}
 .dtab tr.click td:first-child{white-space:nowrap}
 /* статус сохранения и синхронизации, обновление приложения (2026-11-22) */
 .savestat{display:flex;justify-content:center;align-items:center;gap:8px;margin:8px auto 0;max-width:640px;font-size:12.5px;color:var(--ink2);min-height:20px;flex-wrap:wrap;text-align:center}
@@ -516,7 +536,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-22.5';
+const APP_VERSION = '2026-11-23.1';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -775,7 +795,7 @@ function setCell(key, i, t, val){
 }
 
 /* ============ view state ============ */
-const V = { accWeek:null, cal:'month', calMonth:null, calYear:null, calNames:true, view:'home', week:null, day:null, kid:null, kidWeek:null, period:'all', kidQuery:'', kidAll:false };
+const V = { accWeek:null, cal:'month', calMonth:null, calYear:null, calNames:true, view:'home', week:null, day:null, kid:null, kidWeek:null, period:'all', kidQuery:'', kidAll:false, homeDay:null };
 function defaultWeek(){ const t = today(); const m = mondayOf(t); return ymd(t.getDay()===0||t.getDay()===6 ? addDays(m,7) : m); }
 V.week = defaultWeek();
 function go(view, opts={}){ Object.assign(V, opts, {view}); render(); window.scrollTo(0,0); }
@@ -788,7 +808,7 @@ function render(){
   if (V.view==='kids') V.view = 'week';
   ({home:renderHome, week:renderWeek, cal:renderCal, acc:renderAcc, stats:renderStats, data:renderData})[V.view]();
 }
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) go(b.dataset.v); });
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; go(b.dataset.v, b.dataset.v === 'home' ? {homeDay:null} : {}); });
 /* ---- установка на телефон ---- */
 let installEvt = null;
 const HOSTED = /^https?:$/.test(location.protocol);
@@ -796,6 +816,7 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || n
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints > 1);
 const isTouch = () => matchMedia('(pointer:coarse)').matches;
 const SHARE_ICON = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg>';
+const CARD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M5 20c.8-4 3.1-6 7-6s6.2 2 7 6M4 4h16v16H4z"/></svg>';
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderBanner(); if (V.view==='data') renderData(); });
 window.addEventListener('appinstalled', () => { installEvt = null; toast('Приложение установлено'); renderBanner(); });
 function installSteps(){
@@ -852,28 +873,38 @@ function renderBanner(){
 /* ============ HOME: главное со всех вкладок ============ */
 function lastLineOf(w){ const lines = (w && w.calc) || S.settings.template; return lines.length - 1; }
 function renderHome(){
-  const t = today(), tds = ymd(t), wk = defaultWeek(), w = S.weeks[wk];
+  const t = today(), tds = ymd(t);
   const dayList = d => { const out = dayEntries(d); return out.map(x => ({...x, key: parseEntry(x.txt).key})); };
-  // сегодня или ближайший день с занятиями (до 14 дней вперёд)
-  let d0 = t, list = dayList(t), lbl = 'Сегодня';
-  if (!list.length){ for (let k = 1; k <= 14; k++){ const d = addDays(t, k), l = dayList(d); if (l.length){ d0 = d; list = l; lbl = k === 1 ? 'Завтра' : DAYL[(d.getDay()+6)%7]; break; } } }
+  // При новом входе на «Главную» выбираем сегодня. Если все занятия сегодня уже прошли,
+  // показываем ближайший следующий день с занятиями. Стрелки всегда оставляют выбранный день.
   const nowT = pad(new Date().getHours()) + ':' + pad(new Date().getMinutes());
-  const nextIdx = ymd(d0) === tds ? list.findIndex(x => x.t.slice(0,2) >= nowT.slice(0,2)) : -1;
+  let d0 = V.homeDay ? pdate(V.homeDay) : t, list = dayList(d0), autoNext = false;
+  if (!V.homeDay && (!list.length || !list.some(x => x.t >= nowT))){
+    for (let k = 1; k <= 14; k++){
+      const d = addDays(t, k), l = dayList(d);
+      if (l.length){ d0 = d; list = l; autoNext = true; break; }
+    }
+  }
+  const isToday = ymd(d0) === tds;
+  const dayLabel = isToday ? 'Сегодня' : ymd(d0) === ymd(addDays(t,1)) ? 'Завтра' : DAYL[(d0.getDay()+6)%7].replace(/^./, c => c.toUpperCase());
+  const nextIdx = isToday ? list.findIndex(x => x.t >= nowT) : -1;
+  const wk = ymd(mondayOf(d0)), w = S.weeks[wk];
   const wp = weekPay(w), wInc = w && w.calc ? wp.sum : null, payName = wp.names.join(' + ') || 'Сумма';
-  const mKey = monthKey(t), mWeeks = accWeeks(mKey), agg = accAgg(mWeeks);
+  const mKey = monthKey(d0), mWeeks = accWeeks(mKey), agg = accAgg(mWeeks);
   const mInc = mWeeks.length ? mWeeks.reduce((a, k) => a + weekPay(S.weeks[k]).sum, 0) : null;
   const obs = observation();
-  const evs = eventsBetween(tds, ymd(addDays(t, 14)));
+  const evs = eventsBetween(ymd(d0), ymd(addDays(d0, 14)));
   const ending = w ? entries(w).map(e => ({e, p: parseEntry(e.txt)})).filter(x => { const m = /^(\d+)\/(\d+)$/.exec(x.p.suffix||''); return m && +m[1] === +m[2]; }) : [];
   const wIsCur = wk === ymd(mondayOf(t));
   const wa = pdate(wk), wb = addDays(wa, 5), wkShort = wa.getMonth() === wb.getMonth() ? `${wa.getDate()}–${wb.getDate()} ${MS[wa.getMonth()]}` : `${wa.getDate()} ${MS[wa.getMonth()]} – ${wb.getDate()} ${MS[wb.getMonth()]}`;
   const dWeek = ymd(mondayOf(d0)), dIdx = (d0.getDay() + 6) % 7;
   $('#main').innerHTML = `
-  <div class="hhead"><h1>${DAYL[(t.getDay()+6)%7].replace(/^./, c => c.toUpperCase())}, ${t.getDate()} ${MG[t.getMonth()]}</h1><div class="savestat" id="saveStat" aria-live="polite"></div></div>
+  <div class="hhead"><h1>Главная</h1><div class="savestat" id="saveStat" aria-live="polite"></div></div>
   <section class="card hday">
-    <div class="row"><h3 style="margin:0">${ymd(d0) === tds ? 'Сегодня' : lbl.charAt(0).toUpperCase() + lbl.slice(1) + ', ' + d0.getDate() + ' ' + MG[d0.getMonth()]}</h3><span class="sp"></span><span class="hcnt"><span class="small muted">${list.length ? list.length + ' ' + plural(list.length,'занятие','занятия','занятий') : ''}</span>${list.length ? `<span class="hsendg"><button class="hsb" id="hSendDay" title="Отправить расписание дня"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><span>День</span></button><button class="hsb" id="hSendWeek" title="Отправить расписание недели"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><span>Неделя</span></button></span>` : ''}</span></div>
-    ${ymd(d0) !== tds && list.length ? '<div class="small muted">Сегодня занятий нет</div>' : ''}
-    ${list.length ? `<div class="hlist">${list.map((x, n) => `<div class="hr${n === nextIdx ? ' nx' : ''}"><button class="hmain" data-kid="${esc(x.key)}"><span class="ht">${x.t}</span><span class="hn"><span>${esc(x.txt)}</span></span></button>${x.key ? `<button class="hks" data-ks="${esc(x.key)}" title="Отправить расписание ребёнка" aria-label="Отправить расписание: ${esc(x.txt)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button>` : ''}</div>`).join('')}</div>` : '<div class="muted small" style="padding:6px 0">В ближайшие две недели занятий нет</div>'}
+    <div class="hnav"><button class="nav" id="hPrev" aria-label="Предыдущий день">‹</button><h3>${dayLabel}, ${d0.getDate()} ${MG[d0.getMonth()]}</h3><button class="nav" id="hNext" aria-label="Следующий день">›</button></div>
+    ${autoNext ? '<div class="small muted">На сегодня занятия уже закончились</div>' : ''}
+    <div class="row" style="margin-top:6px"><span class="small muted">${list.length ? list.length + ' ' + plural(list.length,'занятие','занятия','занятий') : 'Занятий нет'}</span>${V.homeDay ? '<span class="sp"></span><button class="btn ghost" id="hToday">К сегодняшнему дню</button>' : ''}${list.length ? `<span class="hsendg"><button class="hsb" id="hSendDay" title="Отправить расписание дня"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><span>День</span></button><button class="hsb" id="hSendWeek" title="Отправить расписание недели"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg><span>Неделя</span></button></span>` : ''}</div>
+    ${list.length ? `<div class="hlist">${list.map((x, n) => `<div class="hr${n === nextIdx ? ' nx' : ''}"><button class="hmain" data-kid="${esc(x.key)}"><span class="ht">${x.t}</span><span class="hn"><span>${esc(x.txt)}</span></span></button>${x.key ? `<button class="hks" data-ks="${esc(x.key)}" title="Отправить расписание ребёнка" aria-label="Отправить расписание: ${esc(x.txt)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg></button>` : ''}</div>`).join('')}</div>` : '<div class="muted small" style="padding:8px 0">На этот день занятий нет</div>'}
     <div class="row" style="margin-top:8px"><span class="sp"></span><button class="btn ghost" id="hWeek">Открыть ${wIsCur ? 'неделю' : 'следующую неделю'} ›</button></div>
   </section>
   <section class="htiles">
@@ -887,6 +918,9 @@ function renderHome(){
     ${ending.length ? `<h3 style="margin-top:${evs.length ? 12 : 0}px">Курс заканчивается на этой неделе</h3><div class="small">${ending.map(x => `${DAY[x.e.i]} ${x.e.t} · ${esc(x.e.txt)}`).join('<br>')}</div>` : ''}
   </section>` : ''}`;
   renderSaveStat();
+  $('#hPrev').onclick = () => { V.homeDay = ymd(addDays(d0, -1)); renderHome(); };
+  $('#hNext').onclick = () => { V.homeDay = ymd(addDays(d0, 1)); renderHome(); };
+  if ($('#hToday')) $('#hToday').onclick = () => { V.homeDay = null; renderHome(); };
   $('#hWeek').onclick = () => go('week', {week: wk, day: null});
   $$('#main [data-kid]').forEach(b => b.onclick = () => { if (b.dataset.kid) openKid(b.dataset.kid, dWeek); });
   $$('#main [data-ks]').forEach(b => b.onclick = () => openSend({mode: 'kid', kid: b.dataset.ks, week: dWeek}));
@@ -932,10 +966,10 @@ function renderWeek(){
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
     ${dates.map((d,i)=> isSat(i) ? `<th class="satc ${dcls(d,i)}" data-satopen title="Показать субботу"><span>${DAY[5]}<br>${d.getDate()}</span><small data-cnt="5"></small></th>` : `<th class="${dcls(d,i)}">${i===5 ? '<button class="satx" data-satclose title="Скрыть субботу" aria-label="Скрыть субботу">×</button>' : ''}<button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><button class="dmore" data-dm="${i}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
-    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen>${val(5,t) ? '<i></i>' : ''}</td>` : `<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"${val(i,t) ? ' readonly' : ''}><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
+    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen>${val(5,t) ? '<i></i>' : ''}</td>` : `<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"><button class="snd ${val(i,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen></td>` : `<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
   <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
-  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"${val(V.day,t) ? ' readonly' : ''}><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
+  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"><button class="snd ${val(V.day,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
   <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <div class="wsum" id="wSum"></div>
   <section>
@@ -960,19 +994,19 @@ function renderWeek(){
 
   const cells = $$('.cell', $('#main'));
   cells.forEach(inp => {
-    inp.addEventListener('input', () => { if (inp.readOnly) return; setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.parentElement.querySelectorAll('.rdx').forEach(b => b.classList.toggle('on', !!inp.value.trim())); updateWeekNumbers(); markSame(inp); });
+    inp.addEventListener('input', () => { setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.parentElement.querySelectorAll('.rdx,.snd').forEach(b => b.classList.toggle('on', !!inp.value.trim())); updateWeekNumbers(); markSame(inp); });
     inp.addEventListener('focus', () => markSame(inp));
-    // вписали ребёнка и ушли из поля — запись становится «карточкой»: дальше по нажатию открывается карточка
-    inp.addEventListener('blur', () => { $$('.cell.same').forEach(c=>c.classList.remove('same')); refreshDatalist(); if (inp.value.trim()) inp.readOnly = true; });
-    // нажатие на заполненное время открывает карточку ребёнка (без ввода текста)
-    inp.addEventListener('mousedown', e => { if (inp.readOnly) e.preventDefault(); });
-    inp.addEventListener('click', e => { if (!inp.readOnly) return; const row = inp.closest('.swr');
-      if (row && (row.classList.contains('open') || Date.now() - (row._swipedAt || 0) < 450)) return;
-      e.preventDefault(); inp.blur(); const k = parseEntry(inp.value).key; if (k) openKid(k, key, {i: +inp.dataset.i, t: inp.dataset.t}); });
+    // Заполненный слот остаётся обычным полем: его можно поправить сразу.
+    inp.addEventListener('blur', () => { $$('.cell.same').forEach(c=>c.classList.remove('same')); refreshDatalist(); });
     inp.addEventListener('keydown', e => { if (suggKey(e, inp)) return; moveFocus(e, inp); });
     inp.addEventListener('focus', () => { if (!inp.value.trim()) showSugg(key, inp); });
     inp.addEventListener('input', () => showSugg(key, inp));
     inp.addEventListener('blur', () => setTimeout(() => { if (SUG.inp === inp && document.activeElement !== inp) hideSugg(); }, 120));
+    bindTimeMove(inp, key);
+  });
+  $$('#main [data-card]').forEach(b => {
+    b.addEventListener('mousedown', e => e.preventDefault());
+    b.onclick = e => { e.stopPropagation(); const inp = $('.cell', b.closest('.swr')), k = parseEntry(inp.value).key; if (k) openKid(k, key, {i:+inp.dataset.i, t:inp.dataset.t}); };
   });
   $$('#main .rdx').forEach(b => {
     b.addEventListener('mousedown', e => e.preventDefault());
@@ -1191,10 +1225,11 @@ function dayAccHTML(w, i, key){
   const edit = key && L.some(l => !l.virtual) ? `<button class="dedit" data-dcalc="${i}" data-dk="${key}" title="Изменить формулу расчёта только для этого дня"><span class="dlong">${cust ? 'Своя формула дня · изменить' : 'Изменить формулу дня'}</span><span class="dshort">${cust ? 'Своя формула ✎' : 'Формула дня ✎'}</span></button>` : '';
   if (!c && !cust) return '<span class="muted">нет занятий</span>';
   const total = L.reduce((a, l) => a + l.v, 0);
-  return `<b>${c} ${plural(c,'занятие','занятия','занятий')}</b>` +
-    L.map(l => { const fx = l.custom ? l.f : rateStr(l.rate) + '*N';
-      return `<div class="ln ${l.custom?'cust':''}" title="${esc(l.name)}: ${esc(fx)}, N = ${c}${l.custom?' (свой расчёт дня)':''}${l.err?' — ошибка: '+esc(l.err):''}"><span>${i===5 && !l.custom ? fmtNum(l.rate)+' × '+c : esc(l.name)}${l.custom?' *':''}</span><span>${fmtMoney(l.v)}</span></div><span class="fx">${esc(fx.replace(/\*/g,'×'))}</span>`; }).join('') +
-    (L.length > 1 ? `<div class="ln tot"><span>Общая</span><span>${fmtMoney(total)}</span></div>` : '') + edit;
+  const details = L.map(l => { const fx = l.custom ? l.f : rateStr(l.rate) + '*N';
+    return `<div class="ln ${l.custom?'cust':''}" title="${esc(l.name)}: ${esc(fx)}, N = ${c}${l.custom?' (свой расчёт дня)':''}${l.err?' — ошибка: '+esc(l.err):''}"><span>${i===5 && !l.custom ? fmtNum(l.rate)+' × '+c : esc(l.name)}${l.custom?' *':''}</span><span>${fmtMoney(l.v)}</span></div><span class="fx">${esc(fx.replace(/\*/g,'×'))}</span>`; }).join('') +
+    (L.length > 1 ? `<div class="ln tot"><span>Общая</span><span>${fmtMoney(total)}</span></div>` : '');
+  return `<div class="dcompact"><b>${c} ${plural(c,'занятие','занятия','занятий')}</b><span>${fmtMoney(total)}</span></div>` +
+    `<details class="daccmore"><summary>Подробный расчёт</summary>${details}</details>` + edit;
 }
 function bindDayCalcButtons(root, after){
   $$('[data-dcalc]', root).forEach(b => b.onclick = e => { e.stopPropagation(); if (after) after(); openDayCalc(b.dataset.dk, +b.dataset.dcalc); });
@@ -1214,28 +1249,32 @@ function openDayCalc(key, i){
   const w0 = S.weeks[key], base = dayBase(w0, i).filter(b => !b.virtual);
   if (!base.length){ alert('В расчёте этой недели нет строк вида «ставка × N» (например 2600*N), поэтому менять для дня нечего. Добавьте такую строку в «Учёт» → «Расчёт недели».'); return; }
   const c = dayCnt(w0, i), ov = (w0 && w0.dcalc && w0.dcalc[i]) || {};
+  const linear = (f, b) => { try { const a = dayFormula(f, 0), r = dayFormula(f, 1) - a; return Math.abs(dayFormula(f, 2) - (a + 2*r)) < 1e-6 ? {rate:r, add:a} : null; } catch(e){ return null; } };
+  const qpart = (b) => linear(ov[b.key] != null ? ov[b.key] : rateStr(b.rate)+'*N', b) || {rate:b.rate, add:0};
   const m = modal(`${mhead('Расчёт дня')}
     <div class="small muted" style="margin-top:4px">${dayTitle(key, i)} · N = <b>${c}</b> ${plural(c,'занятие','занятия','занятий')} в этот день</div>
-    <div class="dcgrid">${base.map((b,k) => `<div class="nm">${esc(b.name)}<small>по неделе: ${rateStr(b.rate)}*N</small></div>
+    <div class="dcquick">${base.map((b,k) => { const q = qpart(b); return `<div class="dcquickrow"><div class="nm">${esc(b.name)}<small>по неделе: ${rateStr(b.rate)} за ребёнка</small></div><label>Ставка<input type="number" inputmode="decimal" step="any" data-qr="${k}" value="${q.rate}"></label><label>Поправка<input type="number" inputmode="decimal" step="any" data-qa="${k}" value="${q.add}"></label><b data-qv="${k}"></b></div>`; }).join('')}</div>
+    <details class="dcadvanced"><summary>Полная формула для дня</summary><div class="dcgrid">${base.map((b,k) => `<div class="nm">${esc(b.name)}<small>по неделе: ${rateStr(b.rate)}*N</small></div>
       <input data-k="${k}" value="${esc(ov[b.key] != null ? ov[b.key] : rateStr(b.rate)+'*N')}" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Формула «${esc(b.name)}» для этого дня">
-      <div class="v" data-r="${k}"></div><button class="btn ghost icon" data-rs="${k}" title="Вернуть формулу недели">↺</button>`).join('')}</div>
+      <div class="v" data-r="${k}"></div><button class="btn ghost icon" data-rs="${k}" title="Вернуть формулу недели">↺</button>`).join('')}</div></details>
     <div class="row" style="margin-top:10px"><span class="small">Итого за день: <b id="dcTot"></b></span></div>
-    <div class="hint">N — число занятий в этот день. Примеры: <span class="mono">3000*N</span>, <span class="mono">2600*N+1000</span>, <span class="mono">2600*(N-1)</span>. Меняется только этот день: остальные дни, другие недели и шаблон остаются как были. Итог недели и вкладка «Учёт» пересчитаются сами.</div>
+    <div class="hint">Ставка и поправка меняют только этот день. Для нестандартного расчёта откройте полную формулу: N — число занятий. Итог недели и вкладка «Учёт» пересчитаются сами.</div>
     <div class="row" style="margin-top:12px">${Object.keys(ov).length ? '<button class="btn ghost" id="dcReset">Как в неделе</button>' : ''}<span class="sp"></span><button class="btn" data-x>Отмена</button><button class="btn pri" id="dcSave">Сохранить</button></div>`, 560);
-  const el = m.el, inps = $$('input[data-k]', el);
+  const el = m.el, inps = $$('input[data-k]', el), num = v => Number(String(v).replace(',', '.'));
   const isDefault = (f, rate) => { for (let n = 0; n <= 12; n++){ if (Math.abs(dayFormula(f, n) - rate*n) > 1e-6) return false; } return true; };
   function upd(){
     let tot = 0, bad = false;
-    inps.forEach(inp => { const k = +inp.dataset.k, b = base[k], r = $(`[data-r="${k}"]`, el);
+    inps.forEach(inp => { const k = +inp.dataset.k, b = base[k], r = $(`[data-r="${k}"]`, el), qr = $(`[data-qr="${k}"]`, el), qa = $(`[data-qa="${k}"]`, el), qv = $(`[data-qv="${k}"]`, el);
       const f = inp.value.trim();
-      try { const v = f ? dayFormula(f, c) : b.rate*c; tot += v; r.className = 'v' + (f && !isDefault(f, b.rate) ? ' cust' : ''); r.textContent = fmtMoney(v); inp.classList.remove('err'); }
-      catch(e){ bad = true; r.className = 'v err'; r.textContent = 'ошибка: ' + e.message; inp.classList.add('err'); } });
+      try { const v = f ? dayFormula(f, c) : b.rate*c; tot += v; r.className = 'v' + (f && !isDefault(f, b.rate) ? ' cust' : ''); r.textContent = fmtMoney(v); qv.textContent = fmtMoney(v); inp.classList.remove('err'); const q = linear(f || rateStr(b.rate)+'*N', b); if (q){ qr.disabled = qa.disabled = false; } else { qr.disabled = qa.disabled = true; } }
+      catch(e){ bad = true; r.className = 'v err'; r.textContent = 'ошибка: ' + e.message; qv.textContent = '—'; inp.classList.add('err'); } });
     $('#dcTot', el).textContent = bad ? '—' : fmtMoney(tot);
     $('#dcSave', el).disabled = bad;
   }
   inps.forEach(inp => inp.oninput = upd);
+  $$('[data-qr],[data-qa]', el).forEach(q => q.oninput = () => { const k = +(q.dataset.qr ?? q.dataset.qa), rate = num($(`[data-qr="${k}"]`, el).value), add = num($(`[data-qa="${k}"]`, el).value); if (!isFinite(rate) || !isFinite(add)) return; inps[k].value = rateStr(rate)+'*N'+(add ? (add > 0 ? '+' : '')+rateStr(add) : ''); upd(); });
   $$('[data-rs]', el).forEach(b => b.onclick = () => { const k = +b.dataset.rs; inps[k].value = rateStr(base[k].rate) + '*N'; upd(); });
-  const rs = $('#dcReset', el); if (rs) rs.onclick = () => { inps.forEach((inp,k) => inp.value = rateStr(base[k].rate) + '*N'); upd(); };
+  const rs = $('#dcReset', el); if (rs) rs.onclick = () => { inps.forEach((inp,k) => { inp.value = rateStr(base[k].rate) + '*N'; $(`[data-qr="${k}"]`, el).value = base[k].rate; $(`[data-qa="${k}"]`, el).value = 0; }); upd(); };
   $('#dcSave', el).onclick = () => {
     const next = {};
     for (const inp of inps){ const b = base[+inp.dataset.k], f = inp.value.trim();
@@ -1252,7 +1291,40 @@ function openDayCalc(key, i){
     toast(Object.keys(next).length ? 'Свой расчёт дня сохранён' : 'День считается по формулам недели');
   };
   upd();
-  setTimeout(() => inps[0] && !isTouch() && inps[0].focus(), 50);
+  setTimeout(() => $('[data-qr="0"]', el) && !isTouch() && $('[data-qr="0"]', el).focus(), 50);
+}
+/* ---- перенос занятия удержанием ----
+   Короткое касание оставляет поле для редактирования. Удержание ~0,4 с включает перенос,
+   после чего запись можно перетащить только в свободное время того же дня. */
+function moveEntry(key, i, from, to){
+  if (from === to) return;
+  const w = S.weeks[key], val = w && w.d[i] && w.d[i][from];
+  if (!val) return;
+  if (w.d[i][to] && String(w.d[i][to]).trim()){ toast('Это время уже занято — запись не перенесена'); return; }
+  snapshot('Перенос записи «' + val + '»');
+  delete w.d[i][from]; (w.d[i] || (w.d[i] = {}))[to] = val;
+  tidyWeek(key); dirty(); save(); renderWeek();
+  toast(`Перенесено: ${from} → ${to}`, {label:'Отменить', fn:undoLast});
+}
+function bindTimeMove(inp, key){
+  let st = null;
+  const stop = () => { if (!st) return; clearTimeout(st.timer); const src = st.src; if (src) src.classList.remove('move-src'); $$('.cell.move-target').forEach(x => x.classList.remove('move-target')); st = null; };
+  const targetAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && (el.closest('.swr') || el).querySelector ? (el.matches && el.matches('.cell') ? el : el.closest('.swr') && $('.cell', el.closest('.swr'))) : null; };
+  inp.addEventListener('pointerdown', e => {
+    if (e.button != null && e.button !== 0 || !inp.value.trim() || e.target !== inp) return;
+    stop(); const s = st = {id:e.pointerId, x:e.clientX, y:e.clientY, src:inp, drag:false, target:null, timer:null};
+    s.timer = setTimeout(() => { if (st !== s) return; s.drag = true; inp.blur(); inp.classList.add('move-src'); try { inp.setPointerCapture(e.pointerId); } catch(_){} if (navigator.vibrate) navigator.vibrate(12); }, 420);
+  });
+  inp.addEventListener('pointermove', e => {
+    const s = st; if (!s || s.id !== e.pointerId) return;
+    if (!s.drag){ if (Math.hypot(e.clientX-s.x, e.clientY-s.y) > 10) clearTimeout(s.timer); return; }
+    e.preventDefault(); const trg = targetAt(e.clientX, e.clientY);
+    if (s.target && s.target !== trg) s.target.classList.remove('move-target');
+    s.target = trg && trg !== inp && trg.dataset.i === inp.dataset.i ? trg : null;
+    if (s.target) s.target.classList.add('move-target');
+  });
+  const finish = e => { const s = st; if (!s || s.id !== e.pointerId) return; const target = s.drag && s.target; const from = inp.dataset.t; const to = target && target.dataset.t; stop(); if (to) moveEntry(key, +inp.dataset.i, from, to); };
+  inp.addEventListener('pointerup', finish); inp.addEventListener('pointercancel', stop);
 }
 /* ---- удаление одной записи ---- */
 function deleteEntry(key, i, t){
