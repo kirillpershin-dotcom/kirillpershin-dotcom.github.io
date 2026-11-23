@@ -16,16 +16,21 @@
   --warn:#a35a00; --warn-soft:#fdf3e4; --same:#fff4c2; --today:#f3f6fd; --bad:#b3261e;
   --ev:#7357c4; --ev-soft:#f1ecfb; --ev-ring:#c9b8f0; --off-bg:#fdf1e9; --off-bg2:#f9e0d0; --off-ink:#a35f3c; --q1:#dbe5f8; --q2:#a9c1ef; --q3:#6f97e2; --q4:#2f62c9; --hatch:#e9e9e5;
   --r:10px;
+  color-scheme:light;
 }
 @media (prefers-color-scheme: dark){
   :root{ --bg:#141416; --panel:#1c1c1f; --ink:#ececee; --ink2:#b4b5ba; --muted:#86878d;
     --line:#2e2e32; --line2:#26262a; --accent:#7aa5f2; --accent-soft:#1f2a40;
     --warn:#e5a34b; --warn-soft:#33270f; --same:#4a3f12; --today:#1b2233; --bad:#f2867e;
-    --ev:#c3adf5; --ev-soft:#2d2640; --ev-ring:#6f5aa8; --off-bg:#33261f; --off-bg2:#45322a; --off-ink:#efbd9d; --q1:#22304b; --q2:#2f4c80; --q3:#4a74c4; --q4:#86adf4; --hatch:#2c2c30; }
+    --ev:#c3adf5; --ev-soft:#2d2640; --ev-ring:#6f5aa8; --off-bg:#33261f; --off-bg2:#45322a; --off-ink:#efbd9d; --q1:#22304b; --q2:#2f4c80; --q3:#4a74c4; --q4:#86adf4; --hatch:#2c2c30; color-scheme:dark; }
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
+input:not(.cell):not([type=checkbox]):not([type=radio]),select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+select{min-height:36px;padding:6px 30px 6px 9px}
+input[type=checkbox],input[type=radio]{accent-color:var(--accent)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button{cursor:pointer}
 .wrap{max-width:1180px;margin:0 auto;padding:0 18px 60px}
 header.top{position:sticky;top:0;z-index:20;background:var(--bg);background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
@@ -46,13 +51,14 @@ h3{font-size:15px;font-weight:650;margin:0 0 8px}
 .small{font-size:13px}
 .btn{border:1px solid var(--line);background:var(--panel);padding:6px 12px;border-radius:8px;white-space:nowrap}
 .btn:hover{border-color:var(--muted)}
+.btn:active,.snd:active,.hmain:active{transform:scale(.98)}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
 @media (prefers-color-scheme: dark){.btn.pri{color:#0e1420}}
 .btn.ghost{border-color:transparent;background:none;color:var(--ink2)}
 .btn.ghost:hover{background:var(--line2)}
 .btn.icon{padding:6px 10px}
 .btn:disabled{opacity:.45;cursor:default}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.025)}
 section{margin-top:18px}
 .weekhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:18px}
 .weekhead h1{min-width:250px;text-align:center}
@@ -319,6 +325,7 @@ main,section,.card{min-width:0}
 /* карточка ребёнка */
 .kstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .kstats div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.kstats div:first-child{border-color:var(--accent);background:var(--accent-soft)}
 .kstats b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
 .kstats span{font-size:12px;color:var(--muted)}
 .hbar{display:grid;grid-template-columns:52px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
@@ -363,9 +370,16 @@ nav.tabs button{position:relative}
 .cw .rdx{right:36px}
 .daylist .snd{margin-right:2px}
 .snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.cell.move-src{opacity:.42;pointer-events:none;caret-color:transparent}
+.cell[data-filled]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.cell.move-src{opacity:.16;pointer-events:none;caret-color:transparent}
 .cell.move-target{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent)!important}
-.swr:has(.cell.move-src){user-select:none}
+.cell.move-blocked{background:var(--warn-soft)!important;box-shadow:inset 0 0 0 2px var(--warn)!important}
+.swr:has(.cell.move-src){user-select:none;-webkit-user-select:none}
+.drag-ghost{position:fixed;z-index:70;pointer-events:none;max-width:calc(100vw - 32px);padding:9px 12px;border:1px solid var(--accent);border-radius:10px;background:var(--panel);color:var(--ink);box-shadow:0 12px 28px rgba(0,0,0,.22);font-size:16px;font-weight:600;transform:translate(-50%,-50%);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.96}
+body.schedule-dragging{cursor:grabbing;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.swr.drag-pending .cell[data-filled]{-webkit-touch-callout:none}
+.daylist .rin,.daylist .cell{min-width:0}
+@media (max-width:760px){.daylist .rin{display:grid;grid-template-columns:58px minmax(0,1fr) 40px 32px;gap:2px}.daylist .snd.on{margin-right:0}.daylist .rdx{margin-right:2px}.daylist .cell{padding-left:7px;padding-right:4px}.daylist .r{overflow:hidden}}
 .swr.full .rdel{width:100%!important;justify-content:flex-start;padding-left:18px}
 .kslot{margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
 /* главный экран, ведение, итог недели, суббота (2026-11-22.3) */
@@ -536,7 +550,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-23.1';
+const APP_VERSION = '2026-11-23.2';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -966,10 +980,10 @@ function renderWeek(){
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
     ${dates.map((d,i)=> isSat(i) ? `<th class="satc ${dcls(d,i)}" data-satopen title="Показать субботу"><span>${DAY[5]}<br>${d.getDate()}</span><small data-cnt="5"></small></th>` : `<th class="${dcls(d,i)}">${i===5 ? '<button class="satx" data-satclose title="Скрыть субботу" aria-label="Скрыть субботу">×</button>' : ''}<button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><button class="dmore" data-dm="${i}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
-    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen>${val(5,t) ? '<i></i>' : ''}</td>` : `<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"><button class="snd ${val(i,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
+    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen>${val(5,t) ? '<i></i>' : ''}</td>` : `<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"${val(i,t)?' data-filled':''}><button class="snd ${val(i,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen></td>` : `<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
   <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
-  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"><button class="snd ${val(V.day,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
+  <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"${val(V.day,t)?' data-filled':''}><button class="snd ${val(V.day,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
   <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <div class="wsum" id="wSum"></div>
   <section>
@@ -994,7 +1008,7 @@ function renderWeek(){
 
   const cells = $$('.cell', $('#main'));
   cells.forEach(inp => {
-    inp.addEventListener('input', () => { setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.parentElement.querySelectorAll('.rdx,.snd').forEach(b => b.classList.toggle('on', !!inp.value.trim())); updateWeekNumbers(); markSame(inp); });
+    inp.addEventListener('input', () => { const filled = !!inp.value.trim(); setCell(key, inp.dataset.i, inp.dataset.t, inp.value); inp.classList.toggle('tent', inp.value.includes('?')); inp.toggleAttribute('data-filled', filled); inp.parentElement.querySelectorAll('.rdx,.snd').forEach(b => b.classList.toggle('on', filled)); updateWeekNumbers(); markSame(inp); });
     inp.addEventListener('focus', () => markSame(inp));
     // Заполненный слот остаётся обычным полем: его можно поправить сразу.
     inp.addEventListener('blur', () => { $$('.cell.same').forEach(c=>c.classList.remove('same')); refreshDatalist(); });
@@ -1294,37 +1308,44 @@ function openDayCalc(key, i){
   setTimeout(() => $('[data-qr="0"]', el) && !isTouch() && $('[data-qr="0"]', el).focus(), 50);
 }
 /* ---- перенос занятия удержанием ----
-   Короткое касание оставляет поле для редактирования. Удержание ~0,4 с включает перенос,
-   после чего запись можно перетащить только в свободное время того же дня. */
-function moveEntry(key, i, from, to){
-  if (from === to) return;
-  const w = S.weeks[key], val = w && w.d[i] && w.d[i][from];
-  if (!val) return;
-  if (w.d[i][to] && String(w.d[i][to]).trim()){ toast('Это время уже занято — запись не перенесена'); return; }
-  snapshot('Перенос записи «' + val + '»');
-  delete w.d[i][from]; (w.d[i] || (w.d[i] = {}))[to] = val;
+   idle → pending → dragging → dropping → completed/cancelled.
+   Исходная запись остаётся на месте до успешного drop: отмена не может её потерять. */
+const DRAG_CFG = Object.freeze({holdMs:400, movePx:10, edgePx:56, scrollPx:18});
+function slotMovePlan(w, fromI, fromT, toI, toT){
+  const value = w && w.d && w.d[fromI] && w.d[fromI][fromT];
+  if (!value || !String(value).trim()) return {state:'missing'};
+  if (fromI === toI && fromT === toT) return {state:'same', value};
+  const occupied = w && w.d && w.d[toI] && w.d[toI][toT];
+  return occupied && String(occupied).trim() ? {state:'occupied', value, occupied} : {state:'ready', value};
+}
+function moveEntry(key, fromI, fromT, toI, toT){
+  const w = S.weeks[key], plan = slotMovePlan(w, fromI, fromT, toI, toT);
+  if (plan.state === 'same') return;
+  if (plan.state === 'occupied'){ toast('Это время уже занято — запись не перенесена'); return; }
+  if (plan.state !== 'ready') return;
+  snapshot('Перенос записи «' + plan.value + '»');
+  delete w.d[fromI][fromT]; (w.d[toI] || (w.d[toI] = {}))[toT] = plan.value;
   tidyWeek(key); dirty(); save(); renderWeek();
-  toast(`Перенесено: ${from} → ${to}`, {label:'Отменить', fn:undoLast});
+  toast(`Перенесено: ${fromT} → ${toT}`, {label:'Отменить', fn:undoLast});
 }
 function bindTimeMove(inp, key){
-  let st = null;
-  const stop = () => { if (!st) return; clearTimeout(st.timer); const src = st.src; if (src) src.classList.remove('move-src'); $$('.cell.move-target').forEach(x => x.classList.remove('move-target')); st = null; };
-  const targetAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && (el.closest('.swr') || el).querySelector ? (el.matches && el.matches('.cell') ? el : el.closest('.swr') && $('.cell', el.closest('.swr'))) : null; };
-  inp.addEventListener('pointerdown', e => {
-    if (e.button != null && e.button !== 0 || !inp.value.trim() || e.target !== inp) return;
-    stop(); const s = st = {id:e.pointerId, x:e.clientX, y:e.clientY, src:inp, drag:false, target:null, timer:null};
-    s.timer = setTimeout(() => { if (st !== s) return; s.drag = true; inp.blur(); inp.classList.add('move-src'); try { inp.setPointerCapture(e.pointerId); } catch(_){} if (navigator.vibrate) navigator.vibrate(12); }, 420);
-  });
-  inp.addEventListener('pointermove', e => {
-    const s = st; if (!s || s.id !== e.pointerId) return;
-    if (!s.drag){ if (Math.hypot(e.clientX-s.x, e.clientY-s.y) > 10) clearTimeout(s.timer); return; }
-    e.preventDefault(); const trg = targetAt(e.clientX, e.clientY);
-    if (s.target && s.target !== trg) s.target.classList.remove('move-target');
-    s.target = trg && trg !== inp && trg.dataset.i === inp.dataset.i ? trg : null;
-    if (s.target) s.target.classList.add('move-target');
-  });
-  const finish = e => { const s = st; if (!s || s.id !== e.pointerId) return; const target = s.drag && s.target; const from = inp.dataset.t; const to = target && target.dataset.t; stop(); if (to) moveEntry(key, +inp.dataset.i, from, to); };
-  inp.addEventListener('pointerup', finish); inp.addEventListener('pointercancel', stop);
+  const row = inp.closest('.swr'); let st = {phase:'idle'};
+  const clearTarget = () => $$('.cell.move-target,.cell.move-blocked').forEach(x => x.classList.remove('move-target','move-blocked'));
+  const finish = phase => { if (st.timer) clearTimeout(st.timer); if (st.ghost) st.ghost.remove(); inp.classList.remove('move-src'); row.classList.remove('drag-pending'); document.body.classList.remove('schedule-dragging'); clearTarget(); row._dragPointer = false; st = {phase:phase || 'idle'}; };
+  const cellAt = (x,y) => { const hit = document.elementFromPoint(x,y); return !hit ? null : hit.matches('.cell') ? hit : hit.closest('.swr') && $('.cell',hit.closest('.swr')); };
+  const update = (x,y) => {
+    if (st.ghost){ st.ghost.style.left=x+'px'; st.ghost.style.top=y+'px'; }
+    const cell=cellAt(x,y), w=S.weeks[key]; clearTarget(); st.target=null;
+    if (cell && cell!==inp && cell.dataset.t){ const plan=slotMovePlan(w,+inp.dataset.i,inp.dataset.t,+cell.dataset.i,cell.dataset.t); if (plan.state==='ready'){cell.classList.add('move-target');st.target=cell;} else if (plan.state==='occupied') cell.classList.add('move-blocked'); }
+    const d=y<DRAG_CFG.edgePx?-DRAG_CFG.scrollPx:y>innerHeight-DRAG_CFG.edgePx?DRAG_CFG.scrollPx:0; if(d) window.scrollBy({top:d,behavior:'instant'});
+  };
+  const activate = e => { if(st.phase!=='pending')return; st.phase='dragging'; inp.blur(); inp.classList.add('move-src'); row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging'); const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value; document.body.appendChild(ghost); st.ghost=ghost; try{inp.setPointerCapture(e.pointerId)}catch(_){} if(navigator.vibrate)navigator.vibrate(12); update(e.clientX,e.clientY); };
+  inp.addEventListener('contextmenu',e=>{if(inp.dataset.filled)e.preventDefault()});
+  inp.addEventListener('selectstart',e=>{if(st.phase==='pending'||st.phase==='dragging')e.preventDefault()});
+  inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; finish(); row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
+  inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'){if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx)finish('cancelled');return;} if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
+  const drop=e=>{ if(e.pointerId!==st.id)return; if(st.phase!=='dragging'){finish('cancelled');return;} st.phase='dropping'; const target=st.target, fromI=+inp.dataset.i,fromT=inp.dataset.t,toI=target&&+target.dataset.i,toT=target&&target.dataset.t; finish(target?'completed':'cancelled'); if(target)moveEntry(key,fromI,fromT,toI,toT); };
+  inp.addEventListener('pointerup',drop); inp.addEventListener('pointercancel',()=>finish('cancelled')); inp.addEventListener('lostpointercapture',()=>{if(st.phase==='dragging')finish('cancelled')});
 }
 /* ---- удаление одной записи ---- */
 function deleteEntry(key, i, t){
@@ -1349,6 +1370,8 @@ function bindRowSwipe(row){
   let st = null;
   row.addEventListener('touchstart', e => {
     st = null;
+    // На iOS Pointer Events уже ведут длинное нажатие; не запускаем второй жест удаления.
+    if (row._dragPointer) return;
     if (e.touches.length !== 1 || e.target.closest('.rdel')) return;
     const inp = $('.cell', row); if (!inp || !inp.value.trim() || document.activeElement === inp) return;
     st = {x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, mode: null, open: row.classList.contains('open')};
@@ -1892,8 +1915,7 @@ function openKid(key, weekKey, slot){
   const m = modal(`${mhead(esc(kid.name))}
     <div class="kline" id="kLine">${esc(kidLine(key))}</div>
     ${stxt ? `<div class="kslot" id="kSlot"><div class="small muted">${esc(dayTitle(weekKey, slot.i))} · ${slot.t}</div>
-      <div class="row" style="margin-top:4px;flex-wrap:nowrap"><input class="search" id="ksTxt" value="${esc(stxt)}" autocomplete="off" style="flex:1;min-width:0"><button class="btn" id="ksSave">Сохранить</button></div>
-      <button class="btn danger" id="ksDel" style="margin-top:6px">Удалить запись</button></div>` : ''}
+      <div class="row" style="margin-top:4px;flex-wrap:nowrap"><input class="search" id="ksTxt" value="${esc(stxt)}" autocomplete="off" style="flex:1;min-width:0"><button class="btn" id="ksSave">Сохранить</button><button class="btn danger" id="ksDel">Удалить</button></div></div>` : ''}
     <div class="small muted">${obs.label}${past.length ? ` · с ${dShort(past[0].date)} ${past[0].date.getFullYear()}` : ''}${usual.length ? ' · обычно ' + usual.join(', ') : ''}</div>
     <div class="kprof" id="kProf">
       <div class="kp2">
@@ -1934,7 +1956,7 @@ function openKid(key, weekKey, slot){
     const saveSlot = () => { const v = $('#ksTxt', m.el).value.replace(/\s+/g, ' ').trim(); m.close(); if (!v) { deleteEntry(weekKey, slot.i, slot.t); return; } if (v === stxt) return; snapshot('Изменение записи'); setCell(weekKey, slot.i, slot.t, v); if (V.view === 'week') renderWeek(); toast('Запись изменена', {label: 'Отменить', fn: undoLast}); };
     $('#ksSave', m.el).onclick = saveSlot;
     $('#ksTxt', m.el).onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); saveSlot(); } };
-    $('#ksDel', m.el).onclick = () => { m.close(); deleteEntry(weekKey, slot.i, slot.t); };
+    $('#ksDel', m.el).onclick = () => { if (!confirm('Удалить запись «'+stxt+'»? Её можно будет вернуть кнопкой «Отменить».')) return; m.close(); deleteEntry(weekKey, slot.i, slot.t); };
   }
   draw();
 }
