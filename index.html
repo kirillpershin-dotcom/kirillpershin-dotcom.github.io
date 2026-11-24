@@ -213,10 +213,12 @@ th.off .offlbl{color:var(--off-ink)}
 nav.tabs button{display:flex;align-items:center;gap:6px}
 nav.tabs svg{display:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cw{position:relative}
-.snd{display:none;align-items:center;justify-content:center;border:0;background:var(--panel);color:var(--accent);border-radius:7px;width:30px;height:28px;padding:0;flex:none}
+.snd{display:none;align-items:center;justify-content:center;border:0;background:none;color:var(--muted);border-radius:8px;width:36px;height:34px;padding:0;flex:none;transition:background .16s ease,color .16s ease,transform .12s ease}
 .snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.snd:hover{background:var(--accent-soft)}
+.snd:hover{background:var(--line2);color:var(--ink)}
+.snd:active{background:var(--accent-soft);color:var(--accent);transform:scale(.96)}
 .cw .snd{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
+.cw .snd:active{transform:translateY(-50%) scale(.96)}
 td:hover .snd.on,td:focus-within .snd.on{display:flex}
 .titlepick{position:relative;display:inline-block}
 .titlepick input{display:none}
@@ -367,7 +369,7 @@ nav.tabs button{position:relative}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
 /* редактирование записи, карточка справа и перенос удержанием */
 .cw .snd{right:4px}
-.cw .rdx{right:36px}
+.cw .rdx{right:42px}
 .daylist .snd{margin-right:2px}
 .snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cell[data-filled]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -472,7 +474,7 @@ table.grid th.satc:hover,table.grid td.satc:hover{background:var(--line)}
 .rdx{display:none;align-items:center;justify-content:center;border:0;background:var(--panel);color:var(--bad);border-radius:7px;width:28px;height:28px;padding:0;flex:none}
 .rdx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .rdx:hover{background:var(--line2)}
-.cw .rdx{position:absolute;right:36px;top:50%;transform:translateY(-50%)}
+.cw .rdx{position:absolute;right:42px;top:50%;transform:translateY(-50%)}
 @media (hover:hover) and (pointer:fine){
   td:hover .rdx.on{display:flex}
   .daylist .r:hover .rdx.on{display:flex;margin-right:4px}
@@ -550,7 +552,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-23.3';
+const APP_VERSION = '2026-11-23.4';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1331,7 +1333,7 @@ function moveEntry(key, fromI, fromT, toI, toT){
 function bindTimeMove(inp, key){
   const row = inp.closest('.swr'); let st = {phase:'idle'};
   const clearTarget = () => $$('.cell.move-target,.cell.move-blocked').forEach(x => x.classList.remove('move-target','move-blocked'));
-  const finish = phase => { if (st.timer) clearTimeout(st.timer); if (st.ghost) st.ghost.remove(); inp.classList.remove('move-src'); row.classList.remove('drag-pending'); document.body.classList.remove('schedule-dragging'); clearTarget(); row._dragPointer = false; st = {phase:phase || 'idle'}; };
+  const finish = phase => { if (st.timer) clearTimeout(st.timer); if (st.ghost) st.ghost.remove(); inp.classList.remove('move-src'); row.classList.remove('drag-pending'); document.body.classList.remove('schedule-dragging'); clearTarget(); row._dragPointer = false; row._dragActive = false; st = {phase:phase || 'idle'}; };
   const cellAt = (x,y) => { const hit = document.elementFromPoint(x,y); return !hit ? null : hit.matches('.cell') ? hit : hit.closest('.swr') && $('.cell',hit.closest('.swr')); };
   const update = (x,y) => {
     if (st.ghost){ st.ghost.style.left=x+'px'; st.ghost.style.top=y+'px'; }
@@ -1339,11 +1341,11 @@ function bindTimeMove(inp, key){
     if (cell && cell!==inp && cell.dataset.t){ const plan=slotMovePlan(w,+inp.dataset.i,inp.dataset.t,+cell.dataset.i,cell.dataset.t); if (plan.state==='ready'){cell.classList.add('move-target');st.target=cell;} else if (plan.state==='occupied') cell.classList.add('move-blocked'); }
     const d=y<DRAG_CFG.edgePx?-DRAG_CFG.scrollPx:y>innerHeight-DRAG_CFG.edgePx?DRAG_CFG.scrollPx:0; if(d) window.scrollBy({top:d,behavior:'instant'});
   };
-  const activate = e => { if(st.phase!=='pending')return; st.phase='dragging'; inp.blur(); inp.classList.add('move-src'); row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging'); const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value; document.body.appendChild(ghost); st.ghost=ghost; try{inp.setPointerCapture(e.pointerId)}catch(_){} if(navigator.vibrate)navigator.vibrate(12); update(e.clientX,e.clientY); };
+  const activate = e => { if(st.phase!=='pending')return; st.phase='dragging'; row._dragActive=true; inp.blur(); inp.classList.add('move-src'); row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging'); const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value; document.body.appendChild(ghost); st.ghost=ghost; try{inp.setPointerCapture(e.pointerId)}catch(_){} if(navigator.vibrate)navigator.vibrate(12); update(e.clientX,e.clientY); };
   inp.addEventListener('contextmenu',e=>{if(inp.dataset.filled)e.preventDefault()});
   inp.addEventListener('selectstart',e=>{if(st.phase==='pending'||st.phase==='dragging')e.preventDefault()});
   inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; finish(); row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,lastY:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
-  inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx){clearTimeout(st.timer);st.phase='scrolling';row.classList.remove('drag-pending');} if(st.phase==='scrolling'){if(e.cancelable)e.preventDefault();window.scrollBy({top:st.lastY-e.clientY,behavior:'instant'});st.lastY=e.clientY;return;} if(st.phase==='pending')return; if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
+  inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx){clearTimeout(st.timer);st.phase=Math.abs(e.clientX-st.x)>Math.abs(e.clientY-st.y)*1.2?'swiping':'scrolling';row.classList.remove('drag-pending');} if(st.phase==='swiping')return; if(st.phase==='scrolling'){if(e.cancelable)e.preventDefault();window.scrollBy({top:st.lastY-e.clientY,behavior:'instant'});st.lastY=e.clientY;return;} if(st.phase==='pending')return; if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
   const drop=e=>{ if(e.pointerId!==st.id)return; if(st.phase!=='dragging'){finish('cancelled');return;} st.phase='dropping'; const target=st.target, fromI=+inp.dataset.i,fromT=inp.dataset.t,toI=target&&+target.dataset.i,toT=target&&target.dataset.t; finish(target?'completed':'cancelled'); if(target)moveEntry(key,fromI,fromT,toI,toT); };
   inp.addEventListener('pointerup',drop); inp.addEventListener('pointercancel',()=>finish('cancelled')); inp.addEventListener('lostpointercapture',()=>{if(st.phase==='dragging')finish('cancelled')});
 }
@@ -1370,14 +1372,14 @@ function bindRowSwipe(row){
   let st = null;
   row.addEventListener('touchstart', e => {
     st = null;
-    // На iOS Pointer Events уже ведут длинное нажатие; не запускаем второй жест удаления.
-    if (row._dragPointer) return;
     if (e.touches.length !== 1 || e.target.closest('.rdel')) return;
     const inp = $('.cell', row); if (!inp || !inp.value.trim() || document.activeElement === inp) return;
     st = {x: e.touches[0].clientX, y: e.touches[0].clientY, dx: 0, mode: null, open: row.classList.contains('open')};
   }, {passive: true});
   row.addEventListener('touchmove', e => {
     if (!st) return;
+    // После срабатывания удержания единственным владельцем жеста остаётся перенос.
+    if (row._dragActive){ st = null; return; }
     const dx = e.touches[0].clientX - st.x, dy = e.touches[0].clientY - st.y;
     if (!st.mode){
       if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
