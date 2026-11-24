@@ -213,8 +213,8 @@ th.off .offlbl{color:var(--off-ink)}
 nav.tabs button{display:flex;align-items:center;gap:6px}
 nav.tabs svg{display:none;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cw{position:relative}
-.snd{display:none;align-items:center;justify-content:center;border:0;background:none;color:var(--muted);border-radius:8px;width:36px;height:34px;padding:0;flex:none;transition:background .16s ease,color .16s ease,transform .12s ease}
-.snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.snd{display:none;align-items:center;justify-content:center;border:0;background:none;color:var(--muted);border-radius:7px;width:32px;height:32px;padding:0;flex:none;transition:background .16s ease,color .16s ease,transform .12s ease}
+.snd svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
 .snd:hover{background:var(--line2);color:var(--ink)}
 .snd:active{background:var(--accent-soft);color:var(--accent);transform:scale(.96)}
 .cw .snd{position:absolute;right:4px;top:50%;transform:translateY(-50%)}
@@ -247,7 +247,7 @@ td:hover .snd.on,td:focus-within .snd.on{display:flex}
   .daytabs button{padding:8px 4px}
   .daylist{margin-top:4px}
   .daylist .r{min-height:50px}
-  .daylist .snd.on{display:flex;margin-right:8px;width:38px;height:36px;background:var(--accent-soft)}
+  .daylist .snd.on{display:flex;margin-right:4px;width:32px;height:32px;background:none}
   .evstrip{margin-top:8px}
   input,select,textarea,.search,.date{font-size:16px!important}
   .modal{align-items:flex-end;padding:0}
@@ -369,7 +369,7 @@ nav.tabs button{position:relative}
 @media print{header.top,.banner,.no-print{display:none!important}.gridwrap{border:0}}
 /* редактирование записи, карточка справа и перенос удержанием */
 .cw .snd{right:4px}
-.cw .rdx{right:42px}
+.cw .rdx{right:38px}
 .daylist .snd{margin-right:2px}
 .snd svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 .cell[data-filled]{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -381,7 +381,7 @@ nav.tabs button{position:relative}
 body.schedule-dragging{cursor:grabbing;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .swr.drag-pending .cell[data-filled]{-webkit-touch-callout:none}
 .daylist .rin,.daylist .cell{min-width:0}
-@media (max-width:760px){.daylist .rin{display:grid;grid-template-columns:58px minmax(0,1fr) 40px 32px;gap:2px}.daylist .snd.on{margin-right:0}.daylist .rdx{margin-right:2px}.daylist .cell{padding-left:7px;padding-right:4px}.daylist .r{overflow:hidden}}
+@media (max-width:760px){.daylist .rin{display:grid;grid-template-columns:58px minmax(0,1fr) 34px 32px;gap:2px}.daylist .snd.on{margin-right:0}.daylist .rdx{margin-right:2px}.daylist .cell{padding-left:7px;padding-right:4px}.daylist .r{overflow:hidden}}
 .swr.full .rdel{width:100%!important;justify-content:flex-start;padding-left:18px}
 .kslot{margin:10px 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
 /* главный экран, ведение, итог недели, суббота (2026-11-22.3) */
@@ -474,7 +474,7 @@ table.grid th.satc:hover,table.grid td.satc:hover{background:var(--line)}
 .rdx{display:none;align-items:center;justify-content:center;border:0;background:var(--panel);color:var(--bad);border-radius:7px;width:28px;height:28px;padding:0;flex:none}
 .rdx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .rdx:hover{background:var(--line2)}
-.cw .rdx{position:absolute;right:42px;top:50%;transform:translateY(-50%)}
+.cw .rdx{position:absolute;right:38px;top:50%;transform:translateY(-50%)}
 @media (hover:hover) and (pointer:fine){
   td:hover .rdx.on{display:flex}
   .daylist .r:hover .rdx.on{display:flex;margin-right:4px}
@@ -552,7 +552,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-23.4';
+const APP_VERSION = '2026-11-23.5';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -832,7 +832,7 @@ const isStandalone = () => matchMedia('(display-mode: standalone)').matches || n
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints > 1);
 const isTouch = () => matchMedia('(pointer:coarse)').matches;
 const SHARE_ICON = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg>';
-const CARD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M5 20c.8-4 3.1-6 7-6s6.2 2 7 6M4 4h16v16H4z"/></svg>';
+const CARD_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M5.5 19c.9-3.5 3.1-5.2 6.5-5.2s5.6 1.7 6.5 5.2"/></svg>';
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; renderBanner(); if (V.view==='data') renderData(); });
 window.addEventListener('appinstalled', () => { installEvt = null; toast('Приложение установлено'); renderBanner(); });
 function installSteps(){
