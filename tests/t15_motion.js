@@ -4,7 +4,7 @@
 const assert=require('assert'), fs=require('fs'), vm=require('vm');
 const html=fs.readFileSync(require('path').join(__dirname,'..','index.html'),'utf8');
 const script=html.match(/<script>\n([\s\S]*?)<\/script>/)[1].split('/* ============ start ============ */')[0];
-let nodes=new Map(), timers=new Map(), frames=new Map(), id=0, hit=null, reduced=false, animations=[], ghost=null;
+let nodes=new Map(), timers=new Map(), frames=new Map(), id=0, hit=null, reduced=false, animations=[], ghost=null, dialogs=[], storage=new Map();
 function element(){
   const classes=new Set(), listeners={};
   const e={style:{},dataset:{},attributes:{},value:'',innerHTML:'',offsetWidth:320,isConnected:true,
@@ -13,7 +13,7 @@ function element(){
     fire(type,event={}){for(const fn of [...(listeners[type]||[])])fn(event);},
     setAttribute(k,v){this.attributes[k]=v;},removeAttribute(k){delete this.attributes[k];},hasAttribute(k){return k in this.attributes;},
     querySelector:select,querySelectorAll(){return [];},matches(s){return s==='.cell'&&this.isCell;},closest(){return this.row||null;},contains(){return false;},
-    appendChild(child){if(child.className==='drag-ghost')ghost=child;},remove(){this.isConnected=false;},focus(){},blur(){},getClientRects(){return [{}];},
+    appendChild(child){if(child.className==='drag-ghost')ghost=child;else if(child.className && child.className.startsWith('modal'))dialogs.push(child);},remove(){this.isConnected=false;if(this.firstElementChild)this.firstElementChild.isConnected=false;},focus(){},blur(){},getClientRects(){return [{}];},
     setPointerCapture(pointer){this.capture=pointer;},hasPointerCapture(pointer){return this.capture===pointer;},releasePointerCapture(){this.capture=null;},
     animate(keyframes,options){
       let resolve,reject;const finished=new Promise((a,b)=>{resolve=a;reject=b;});
@@ -27,7 +27,7 @@ Object.assign(document,{body,documentElement:{outerHTML:'<html></html>'},activeE
   getElementById(id){return id==='seed'?{textContent:'{"v":1,"settings":{},"weeks":{},"events":[]}'}:select('#'+id);},
   createElement(){const el=element();el.firstElementChild=element();return el;},elementFromPoint(x,y){return typeof hit==='function'?hit(x,y):hit;}});
 const context={console,document,navigator:{userAgent:'',platform:'',maxTouchPoints:0},location:{protocol:'file:'},
-  localStorage:{getItem(){return null;},setItem(){},removeItem(){}},sessionStorage:{getItem(){return null;},setItem(){},removeItem(){}},
+  localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},sessionStorage:{getItem(){return null;},setItem(){},removeItem(){}},
   matchMedia:q=>({matches:q==='(prefers-reduced-motion:reduce)'&&reduced}),
   setTimeout(fn,ms){const n=++id;timers.set(n,{fn,ms});return n;},clearTimeout:n=>timers.delete(n),setInterval(){},clearInterval(){},
   requestAnimationFrame(fn){const n=++id;frames.set(n,fn);return n;},cancelAnimationFrame:n=>frames.delete(n),
@@ -38,6 +38,7 @@ const context={console,document,navigator:{userAgent:'',platform:'',maxTouchPoin
 vm.runInNewContext(script+'\nglobalThis.app={bindTimeMove,bindRowSwipe,dragScrollDelta,enterMotion,modal,setState:x=>{S=x;dirty();},cancelGesture:()=>{if(cancelTimeGesture)cancelTimeGesture();},setView:()=>Object.assign(V,{week:"2026-11-23",day:0,view:"week"})};',context);
 const app=context.app, week='2026-11-23';let passed=0;
 function fixture(){
+  reduced=true;dialogs.forEach(d=>{if(d.isConnected)d.fire('click',{target:{closest:()=>true}});});dialogs=[];storage.clear();
   app.cancelGesture();nodes=new Map();timers.clear();frames.clear();animations=[];ghost=null;hit=null;reduced=false;context.scrollY=0;document.activeElement=null;
   const state={settings:{days:6,from:9,to:12,template:[]},events:[],weeks:{[week]:{d:{0:{'10:00':'Аня'}},calc:[]}}};app.setState(state);app.setView();
   const row=element(), input=element(), slider=element();
@@ -71,6 +72,53 @@ test('занятый слот защищён от перезаписи',()=>{
   app.bindTimeMove(f.input,week);f.input.fire('pointerdown',pointer(f.input));hold();hit=target('09:00');
   f.input.fire('pointermove',pointer(f.input,100,200));frame();assert.ok(hit.classList.contains('move-blocked'));
   f.input.fire('pointerup',pointer(f.input,100,200));assert.equal(JSON.stringify(f.state),before);
+  assert.equal(dialogs.length,1);assert.ok(dialogs[0].innerHTML.includes('Заменить занятие?'));assert.ok(dialogs[0].innerHTML.includes('Аня'));assert.ok(dialogs[0].innerHTML.includes('Боря'));
+});
+function occupiedDrop(time='09:00',day=0){
+  const f=fixture();(f.state.weeks[week].d[day]||(f.state.weeks[week].d[day]={}))[time]='Боря';f.before=JSON.stringify(f.state);
+  app.bindTimeMove(f.input,week);f.input.fire('pointerdown',pointer(f.input));hold();hit=target(time);hit.dataset.i=String(day);
+  f.input.fire('pointermove',pointer(f.input,100,200));frame();assert.ok(ghost.classList.contains('replace'));
+  f.input.fire('pointerup',pointer(f.input,100,200));return f;
+}
+for(const time of ['09:00','11:00'])test('подтверждение замены на '+time+' переносит один раз, сохраняется и отменяется',()=>{
+  const f=occupiedDrop(time);assert.equal(JSON.stringify(f.state),f.before);assert.equal(frames.size,0);assert.equal(ghost.isConnected,false);
+  const confirm=select('#moveReplace').onclick;confirm();confirm();
+  assert.equal(f.state.weeks[week].d[0][time],'Аня');assert.ok(!f.state.weeks[week].d[0]['10:00']);
+  assert.equal(Object.values(f.state.weeks[week].d[0]).filter(x=>x==='Аня').length,1);
+  const saved=JSON.parse(storage.get('kirill-schedule-app-v1'));assert.equal(saved.weeks[week].d[0][time],'Аня');assert.ok(!saved.weeks[week].d[0]['10:00']);
+  select('.toast-action').onclick();assert.equal(f.state.weeks[week].d[0]['10:00'],'Аня');assert.equal(f.state.weeks[week].d[0][time],'Боря');
+});
+for(const cancel of ['button','escape','outside'])test('отмена замены через '+cancel+' сохраняет обе записи',()=>{
+  const f=occupiedDrop();reduced=true;const d=dialogs[0];
+  if(cancel==='escape')document.fire('keydown',{key:'Escape'});else if(cancel==='outside')d.fire('mousedown',{target:d});else d.fire('click',{target:{closest:()=>true}});
+  assert.equal(d.isConnected,false);assert.equal(JSON.stringify(f.state),f.before);
+  select('#moveReplace').onclick();assert.equal(JSON.stringify(f.state),f.before);
+});
+for(const change of ['source','target','empty-target'])test('изменение '+change+' во время подтверждения отменяет устаревшую замену',()=>{
+  const f=occupiedDrop();if(change==='source')f.state.weeks[week].d[0]['10:00']='Новая запись';else if(change==='target')f.state.weeks[week].d[0]['09:00']='Новая запись';else delete f.state.weeks[week].d[0]['09:00'];
+  const before=JSON.stringify(f.state);select('#moveReplace').onclick();assert.equal(JSON.stringify(f.state),before);
+});
+test('отмена замены восстанавливает два дня, не затрагивая новые записи',()=>{
+  const f=occupiedDrop('09:00',1);select('#moveReplace').onclick();assert.ok(!f.state.weeks[week].d[0]);
+  f.state.weeks[week].d[2]={'12:00':'Вера'};select('.toast-action').onclick();
+  assert.equal(f.state.weeks[week].d[0]['10:00'],'Аня');assert.equal(f.state.weeks[week].d[1]['09:00'],'Боря');assert.equal(f.state.weeks[week].d[2]['12:00'],'Вера');
+});
+for(const change of ['source','target'])test('безопасная отмена не перезаписывает изменившийся '+change,()=>{
+  const f=occupiedDrop();select('#moveReplace').onclick();
+  if(change==='source')f.state.weeks[week].d[0]['10:00']='Новая запись';else f.state.weeks[week].d[0]['09:00']='Новая запись';
+  const before=JSON.stringify(f.state);select('.toast-action').onclick();assert.equal(JSON.stringify(f.state),before);
+});
+test('системная отмена над занятым слотом не открывает замену',()=>{
+  const f=fixture();f.state.weeks[week].d[0]['09:00']='Боря';const before=JSON.stringify(f.state);
+  app.bindTimeMove(f.input,week);f.input.fire('pointerdown',pointer(f.input));hold();hit=target('09:00');
+  f.input.fire('pointermove',pointer(f.input,100,200));frame();f.input.fire('pointercancel',pointer(f.input));
+  assert.equal(dialogs.length,0);assert.equal(JSON.stringify(f.state),before);
+});
+test('клик после переноса не фокусирует запись за окном подтверждения',()=>{
+  const f=occupiedDrop();let blocked=false;
+  f.input.fire('click',{preventDefault(){blocked=true;},stopImmediatePropagation(){}});assert.ok(blocked);
+  f.input.fire('pointerdown',pointer(f.input));f.input.fire('pointerup',pointer(f.input));blocked=false;
+  f.input.fire('click',{preventDefault(){blocked=true;},stopImmediatePropagation(){}});assert.equal(blocked,false);
 });
 for(const type of ['pointercancel','lostpointercapture'])test(type+' отменяет перенос и очищает кадры',()=>{
   const f=fixture();app.bindTimeMove(f.input,week);f.input.fire('pointerdown',pointer(f.input));hold();hit=target('09:00');
