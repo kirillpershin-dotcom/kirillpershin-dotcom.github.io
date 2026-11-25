@@ -580,6 +580,13 @@ nav.tabs button{position:relative;transition:color var(--move-ms) var(--ease-ui)
 nav.tabs svg{transition:transform var(--move-ms) var(--ease-ui)}
 nav.tabs button:active svg{transform:scale(.9)}
 .daytabs button{min-height:44px;min-width:44px;flex:1 0 44px}
+.tools{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tools button{min-width:0}
+@media (max-width:360px){
+  .tools button{font-size:12px;padding:7px 2px}
+  .tools button:not(.sat-toggle) svg{display:none}
+  .tools .sat-toggle{width:100%;margin-left:0;padding:8px 4px}
+}
 .daytabs button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft);color:var(--accent)}
 .segfull button.on{transition:background var(--move-ms) var(--ease-ui),color var(--move-ms) var(--ease-ui)}
 .modal{animation:backdrop-in 160ms var(--ease-ui)}
@@ -634,7 +641,7 @@ nav.tabs button:active svg{transform:scale(.9)}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-25.4';
+const APP_VERSION = '2026-11-25.5';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
