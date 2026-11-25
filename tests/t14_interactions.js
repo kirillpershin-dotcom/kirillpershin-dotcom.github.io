@@ -101,8 +101,17 @@ test('в карточке действия выше одинаково офор�
 });
 test('суббота сворачивается на телефоне без удаления записей', () => {
   const s=fixture(); app.setState(s); Object.assign(app.V,{view:'week',week:'2026-11-23',day:0,satOpen:false});
-  app.renderWeek(); assert.ok(node('#main').innerHTML.includes('+ Сб')); assert.ok(!node('#main').innerHTML.includes('id="wDay"')); assert.ok(!node('#main').innerHTML.includes('data-dm='));
-  app.V.day=5; app.renderWeek(); assert.equal(app.V.satOpen,true); assert.ok(node('#main').innerHTML.includes('aria-label="Скрыть субботу"')); assert.equal(s.weeks['2026-11-23'].d[5]['09:00'],'Боря');
+  const before=JSON.stringify(s);
+  app.renderWeek(); assert.ok(!node('#main').innerHTML.includes('data-i="5"')); assert.ok(!node('#main').innerHTML.includes('data-day="5"')); assert.ok(!node('#main').innerHTML.includes('id="wDay"')); assert.ok(!node('#main').innerHTML.includes('data-dm='));
+  context.matchMedia=q=>({matches:q==='(max-width:760px)'}); app.V.day=2;
+  node('#wSaturday').onclick(); assert.equal(app.V.day,5); assert.ok(node('#main').innerHTML.includes('data-i="5"')); assert.ok(node('#main').innerHTML.includes('aria-expanded="true"'));
+  node('#wSaturday').onclick(); assert.equal(app.V.day,2); assert.ok(!node('#main').innerHTML.includes('data-i="5"')); assert.ok(!node('#main').innerHTML.includes('data-day="5"'));
+  app.renderWeek(); assert.equal(app.V.satOpen,false);
+  for (let i=0;i<10;i++) node('#wSaturday').onclick();
+  assert.equal(app.V.satOpen,false); assert.equal(JSON.stringify(s),before);
+  context.matchMedia=()=>({matches:false});
+  node('#wSaturday').onclick(); assert.equal(app.V.day,2); assert.ok(node('#main').innerHTML.includes('data-day="5"'));
+  node('#wSaturday').onclick(); assert.ok(!node('#main').innerHTML.includes('data-day="5"'));
 });
 test('снятие галочки переносит только выбранные дни и сохраняет результат', () => {
   const s=fixture(), saved=new Map(); app.setState(s); context.scrollTo=()=>{}; context.localStorage.setItem=(k,v)=>saved.set(k,v);
