@@ -428,12 +428,12 @@ body.schedule-dragging{cursor:grabbing;-webkit-user-select:none;user-select:none
 .wsum .wsl{color:var(--muted);font-size:12px;width:100%}
 .wsum .wst{color:var(--ink)}
 .wsum button{margin-left:auto;border:0;background:none;color:var(--accent);padding:0;font-size:13px}
-table.grid th.satc,table.grid td.satc{width:46px;cursor:pointer;text-align:center;color:var(--muted);background:var(--line2)}
-table.grid th.satc{padding:8px 2px;font-size:12px;line-height:1.25}
-table.grid th.satc small{display:block;font-weight:500}
-table.grid td.satc i{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--muted)}
-table.grid th.satc:hover,table.grid td.satc:hover{background:var(--line)}
-.satx{float:right;border:0;background:none;color:var(--muted);padding:0 0 0 6px;font-size:15px;line-height:1}
+.tools .sat-toggle{flex:0 0 auto;margin-left:auto;gap:6px;padding:8px 10px;min-height:44px;border:0;background:transparent;color:var(--muted);border-radius:9px;transition:background .18s ease,color .18s ease}
+.tools .sat-toggle[aria-expanded="true"]{background:var(--line2);color:var(--ink)}
+.tools .sat-toggle svg{width:14px;height:14px;transition:transform .18s ease}
+.tools .sat-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
+@media (hover:hover){.tools .sat-toggle:hover{background:var(--line2);color:var(--ink)}}
+@media (prefers-reduced-motion:reduce){.tools .sat-toggle,.tools .sat-toggle svg{transition:none}}
 /* компактная панель недели */
 .tools{gap:6px;margin-top:10px}
 .tools button{flex-direction:row;justify-content:center;gap:5px;padding:7px 4px;font-size:13px;min-height:36px;white-space:nowrap}
@@ -551,7 +551,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-25.1';
+const APP_VERSION = '2026-11-25.2';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -947,6 +947,24 @@ function renderHome(){
 }
 
 /* ============ WEEK ============ */
+function toggleSaturday(){
+  const open = !V.satOpen;
+  if (open){
+    V.satReturnDay = V.day;
+    V.satOpen = true;
+    if (matchMedia('(max-width:760px)').matches) V.day = 5;
+  } else {
+    V.satOpen = false;
+    if (V.day === 5) V.day = V.satReturnDay != null && V.satReturnDay !== 5 && V.satReturnDay < S.settings.days ? V.satReturnDay : 4;
+  }
+  renderWeek();
+  const button = $('#wSaturday'); if (button) button.focus({preventScroll:true});
+  if (!matchMedia('(prefers-reduced-motion:reduce)').matches){
+    [$('#dayTabs'), $('.gridwrap.desk'), $('#dayList')].forEach(el => {
+      if (el && el.animate) el.animate([{opacity:.55,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:180,easing:'cubic-bezier(.2,.8,.2,1)'});
+    });
+  }
+}
 function renderWeek(){
   if (cancelTimeGesture) cancelTimeGesture();
   const key = V.week, w = S.weeks[key], nd = S.settings.days;
@@ -963,7 +981,7 @@ function renderWeek(){
   const offDay = dates.map(d => eventsOn(ymd(d)).find(e=>e.off));
   const dcls = (d,i) => [ymd(d)===tds?'today':'', offDay[i]?'off':''].join(' ');
   if (V.day === 5) V.satOpen = true;
-  const satH = nd >= 6 && !V.satOpen, isSat = i => i === 5 && satH;
+  const visibleDates = dates.map((d,i)=>({d,i})).filter(({i})=>i!==5 || V.satOpen);
 
   $('#main').innerHTML = `
   <div class="phead" id="wHead">
@@ -978,14 +996,15 @@ function renderWeek(){
   <div class="tools">
     <button id="wCopyTo" ${empty?'disabled':''} title="Скопировать или перенести неделю либо день — выбор в следующем окне"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Копировать…</button>
     <button id="wShare" title="Отправить расписание недели, дня или ребёнка — выбор в следующем окне"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>Отправить…</button>
+    ${nd>=6 ? `<button class="sat-toggle" id="wSaturday" aria-expanded="${!!V.satOpen}" aria-controls="dayTabs dayList" aria-label="${V.satOpen?'Скрыть субботу':'Показать субботу'}">Суббота<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}
   </div>
   <div class="savestat" id="saveStat" aria-live="polite"></div>
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
-    ${dates.map((d,i)=> isSat(i) ? `<th class="satc ${dcls(d,i)}" data-satopen title="Показать субботу"><span>${DAY[5]}<br>${d.getDate()}</span><small data-cnt="5"></small></th>` : `<th class="${dcls(d,i)}">${i===5 ? '<button class="satx" data-satclose title="Скрыть субботу" aria-label="Скрыть субботу">×</button>' : ''}<button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
+    ${visibleDates.map(({d,i})=>`<th class="${dcls(d,i)}"><button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
-    ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen>${val(5,t) ? '<i></i>' : ''}</td>` : `<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"${val(i,t)?' data-filled':''}><button class="snd ${val(i,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
-  </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen></td>` : `<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
-  <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button ${i===5&&!V.satOpen?'data-satopen':'data-i="'+i+'"'} class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}" aria-label="${i===5&&!V.satOpen?'Показать субботу':DAY[i]}">${i===5&&!V.satOpen?'+ Сб':DAY[i]+' '+d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}${nd>=6&&V.satOpen?'<button data-satclose aria-label="Скрыть субботу" style="flex:0 0 32px;min-width:32px">×</button>':''}</div>
+    ${sl.map(t=>`<tr><td class="time">${t}</td>${visibleDates.map(({d,i})=>`<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"${val(i,t)?' data-filled':''}><button class="snd ${val(i,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
+  </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${visibleDates.map(({d,i})=>`<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
+  <div class="daytabs" id="dayTabs">${visibleDates.map(({d,i})=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
   <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"${val(V.day,t)?' data-filled':''}><button class="snd ${val(V.day,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
   <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <div class="wsum" id="wSum"></div>
@@ -1030,8 +1049,7 @@ function renderWeek(){
   });
   $$('#main .rdel').forEach(b => b.onclick = e => { e.stopPropagation(); const inp = $('.cell', b.closest('.swr')); deleteEntry(key, +inp.dataset.i, inp.dataset.t); });
   $$('#main .swr').forEach(bindRowSwipe);
-  $$('#main [data-satopen]').forEach(b => b.onclick = () => { V.satOpen = true; if (b.closest('#dayTabs')) V.day = 5; renderWeek(); });
-  $$('#main [data-satclose]').forEach(b => b.onclick = e => { e.stopPropagation(); V.satOpen = false; if (V.day===5) V.day=4; renderWeek(); });
+  if ($('#wSaturday')) $('#wSaturday').onclick = toggleSaturday;
   renderSaveStat();
   // свайпы внутри списка и сетки не листают дни и недели: по записи свайп только открывает «Удалить»
   updateWeekNumbers();
