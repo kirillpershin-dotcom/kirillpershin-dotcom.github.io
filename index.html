@@ -569,6 +569,47 @@ table.grid .dedit .dlong{display:none}
 }
 @media (max-width:380px){.transfer-pair{grid-template-columns:minmax(0,1fr);gap:6px}.transfer-arrow{display:none}}
 @media (prefers-reduced-motion:reduce){.kid-sheet>.card{animation:none}.btn,.toast{transition:none}}
+/* Движение: короткий отклик, без постоянных анимаций и перерасчёта размеров */
+:root{--ease-ui:cubic-bezier(.2,.8,.2,1);--press-ms:120ms;--move-ms:200ms}
+button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.nav,.tools button,.daytabs button,.segfull button,.hks,.hsb,.htile{transition:background var(--move-ms) var(--ease-ui),color var(--move-ms) var(--ease-ui),border-color var(--move-ms) var(--ease-ui),transform var(--press-ms) var(--ease-ui)}
+.nav:active,.tools button:active,.daytabs button:active,.hks:active,.hsb:active{transform:scale(.95)}
+.htile:active{transform:scale(.985)}
+.tools button:disabled:active{transform:none}
+nav.tabs button{position:relative;transition:color var(--move-ms) var(--ease-ui),background var(--move-ms) var(--ease-ui)}
+nav.tabs svg{transition:transform var(--move-ms) var(--ease-ui)}
+nav.tabs button:active svg{transform:scale(.9)}
+.daytabs button{min-height:44px;min-width:44px;flex:1 0 44px}
+.daytabs button.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--accent-soft);color:var(--accent)}
+.segfull button.on{transition:background var(--move-ms) var(--ease-ui),color var(--move-ms) var(--ease-ui)}
+.modal{animation:backdrop-in 160ms var(--ease-ui)}
+.modal>.card{animation:sheet-enter 220ms var(--ease-ui)}
+.kid-sheet>.card{animation-duration:260ms}
+.kid-details>summary{display:flex;align-items:center;justify-content:space-between;list-style:none;cursor:pointer;min-height:44px}
+.kid-details>summary::-webkit-details-marker{display:none}
+.kid-details>summary::after{content:'';width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);transition:transform var(--move-ms) var(--ease-ui);margin-right:4px}
+.kid-details[open]>summary::after{transform:rotate(225deg)}
+.kid-details[open]>.kprof,.kid-details[open]>div{animation:detail-in 180ms var(--ease-ui)}
+.swr.settle .rin,.swr.settle .cell{transition:transform 230ms var(--ease-ui)}
+.swr.drag .rin{will-change:transform}
+.swr.drag-pending .cell[data-filled]{background:var(--line2)}
+.cell{transition:background 140ms ease,box-shadow 140ms ease}
+.drag-ghost{left:0;top:0;will-change:transform;box-shadow:0 12px 32px #0003;border-color:var(--accent);opacity:.98}
+.toast{transition:opacity 160ms ease,transform var(--move-ms) var(--ease-ui);transform:translate(-50%,6px)}
+.toast.on{transform:translate(-50%,0)}
+.toast-action{transition:background var(--press-ms) ease}
+@keyframes backdrop-in{from{background-color:transparent}to{background-color:rgba(0,0,0,.35)}}
+@keyframes detail-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width:760px){
+  nav.tabs button.on::after{content:'';position:absolute;top:0;left:calc(50% - 8px);width:16px;height:2px;background:currentColor;border-radius:2px}
+  .nav,.hks{min-height:40px}
+}
+@media (prefers-reduced-motion:reduce){
+  .modal,.modal>.card,.kid-details[open]>.kprof,.kid-details[open]>div{animation:none}
+  button,.cell,.toast,nav.tabs svg,.kid-details>summary::after,.swr.settle .rin,.swr.settle .cell{transition:none!important}
+  .nav:active,.tools button:active,.daytabs button:active,.hks:active,.hsb:active,.htile:active,.btn:active,.hmain:active{transform:none}
+  nav.tabs button:active svg{transform:none}
+}
 </style>
 </head>
 <body>
@@ -593,7 +634,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-25.3';
+const APP_VERSION = '2026-11-25.4';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -859,15 +900,31 @@ function setCell(key, i, t, val){
 }
 
 /* ============ view state ============ */
+const MOTION = Object.freeze({enterMs:200, exitMs:150, easing:'cubic-bezier(.2,.8,.2,1)'});
+const reducedMotion = () => matchMedia('(prefers-reduced-motion:reduce)').matches;
+function cancelMotion(el){ if (el && el._motion){ el._motion.cancel(); el._motion=null; } }
+function enterMotion(el, direction=0){
+  cancelMotion(el);
+  if (!el || !el.animate || reducedMotion()) return;
+  const animation=el.animate([{opacity:.65,transform:`translate3d(${Math.sign(direction)*12}px,${direction?0:5}px,0)`},{opacity:1,transform:'translate3d(0,0,0)'}],{duration:MOTION.enterMs,easing:MOTION.easing});
+  el._motion=animation;
+  const done=()=>{ if (el._motion===animation) el._motion=null; };
+  animation.finished.then(done,done);
+}
 const V = { accWeek:null, cal:'month', calMonth:null, calYear:null, calNames:true, view:'home', week:null, day:null, kid:null, kidWeek:null, period:'all', kidQuery:'', kidAll:false, homeDay:null };
 function defaultWeek(){ const t = today(); const m = mondayOf(t); return ymd(t.getDay()===0||t.getDay()===6 ? addDays(m,7) : m); }
 V.week = defaultWeek();
-function go(view, opts={}){ Object.assign(V, opts, {view}); render(); window.scrollTo(0,0); }
+function go(view, opts={}){
+  const order=['home','week','cal','acc','stats','data'];
+  const direction=view===V.view && opts.week && V.week ? Math.sign(opts.week.localeCompare(V.week)) : Math.sign(order.indexOf(view)-order.indexOf(V.view));
+  Object.assign(V, opts, {view}); render(); window.scrollTo(0,0); enterMotion($('#main'),direction);
+}
 
 /* ============ render: shell ============ */
 function render(){
+  cancelMotion($('#main'));
   if (cancelTimeGesture) cancelTimeGesture();
-  $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v===V.view));
+  $$('#tabs button').forEach(b => { const on=b.dataset.v===V.view; b.classList.toggle('on',on); if (on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
   renderBanner(); renderUpdBanner();
   $('#main').onclick = null;
   if (V.view==='kids') V.view = 'week';
@@ -998,10 +1055,15 @@ function renderHome(){
     ${ending.length ? `<h3 style="margin-top:${evs.length ? 12 : 0}px">Курс заканчивается на этой неделе</h3><div class="small">${ending.map(x => `${DAY[x.e.i]} ${x.e.t} · ${esc(x.e.txt)}`).join('<br>')}</div>` : ''}
   </section>` : ''}`;
   renderSaveStat();
-  $('#hPrev').onclick = () => { V.homeDay = ymd(addDays(d0, -1)); renderHome(); };
+  const moveDay = delta => {
+    const buttonId=delta<0?'hPrev':'hNext', focused=document.activeElement===$('#'+buttonId);
+    V.homeDay=ymd(addDays(d0,delta)); renderHome(); enterMotion($('.hday'),delta);
+    if (focused) $('#'+buttonId).focus({preventScroll:true});
+  };
+  $('#hPrev').onclick = () => moveDay(-1);
   updateHomeClock();
-  $('#hNext').onclick = () => { V.homeDay = ymd(addDays(d0, 1)); renderHome(); };
-  if ($('#hToday')) $('#hToday').onclick = () => { V.homeDay = null; renderHome(); };
+  $('#hNext').onclick = () => moveDay(1);
+  if ($('#hToday')) $('#hToday').onclick = () => { V.homeDay = null; renderHome(); enterMotion($('.hday')); };
   $('#hWeek').onclick = () => go('week', {week: wk, day: null});
   $$('#main [data-kid]').forEach(b => b.onclick = () => { if (b.dataset.kid) openKid(b.dataset.kid, dWeek); });
   $$('#main [data-ks]').forEach(b => b.onclick = () => openSend({mode: 'kid', kid: b.dataset.ks, week: dWeek}));
@@ -1024,11 +1086,7 @@ function toggleSaturday(){
   }
   renderWeek();
   const button = $('#wSaturday'); if (button) button.focus({preventScroll:true});
-  if (!matchMedia('(prefers-reduced-motion:reduce)').matches){
-    [$('#dayTabs'), $('.gridwrap.desk'), $('#dayList')].forEach(el => {
-      if (el && el.animate) el.animate([{opacity:.55,transform:'translateY(3px)'},{opacity:1,transform:'translateY(0)'}],{duration:180,easing:'cubic-bezier(.2,.8,.2,1)'});
-    });
-  }
+  [$('#dayTabs'), $('.gridwrap.desk'), $('#dayList')].forEach(el=>enterMotion(el));
 }
 function renderWeek(){
   if (cancelTimeGesture) cancelTimeGesture();
@@ -1089,7 +1147,12 @@ function renderWeek(){
   $('#wCopyTo').onclick = () => openCopy();
   $$('#main [data-ev]').forEach(b => b.onclick = () => openEvent(evList().find(e=>e.id===b.dataset.ev)));
   $$('#main .dayhd').forEach(b => b.onclick = () => openSend({mode:'day', week:key, day:+b.dataset.day}));
-  $$('#dayTabs [data-i]').forEach(b => b.onclick = () => { V.day = +b.dataset.i; renderWeek(); });
+  $$('#dayTabs [data-i]').forEach(b => b.onclick = () => {
+    const day=+b.dataset.i, direction=Math.sign(day-V.day), focused=document.activeElement===b;
+    if (!direction) return;
+    V.day=day; renderWeek(); enterMotion($('#dayList'),direction);
+    if (focused){ const next=$('#dayTabs [data-i="'+day+'"]'); if (next) next.focus({preventScroll:true}); }
+  });
   $('#wNotes').oninput = e => { e.target.rows = Math.max(4, e.target.value.split('\n').length+1); const v = e.target.value; if (v.trim()){ ensureWeek(key).notes = v; } else if (S.weeks[key]) { delete S.weeks[key].notes; tidyWeek(key); } save(); };
 
   const cells = $$('.cell', $('#main'));
@@ -1115,6 +1178,12 @@ function renderWeek(){
   $$('#main .rdel').forEach(b => b.onclick = e => { e.stopPropagation(); const inp = $('.cell', b.closest('.swr')); deleteEntry(key, +inp.dataset.i, inp.dataset.t); });
   $$('#main .swr').forEach(bindRowSwipe);
   if ($('#wSaturday')) $('#wSaturday').onclick = toggleSaturday;
+  const tabs=$('#dayTabs'), activeTab=$('[data-i="'+V.day+'"]',tabs);
+  if (activeTab){
+    const left=activeTab.offsetLeft, right=left+activeTab.offsetWidth;
+    if (left<tabs.scrollLeft) tabs.scrollLeft=left;
+    else if (right>tabs.scrollLeft+tabs.clientWidth) tabs.scrollLeft=right-tabs.clientWidth;
+  }
   renderSaveStat();
   // свайпы внутри списка и сетки не листают дни и недели: по записи свайп только открывает «Удалить»
   updateWeekNumbers();
@@ -1394,10 +1463,11 @@ function openDayCalc(key, i){
 /* ---- перенос занятия удержанием ----
    idle → pending → dragging → dropping → completed/cancelled.
    Исходная запись остаётся на месте до успешного drop: отмена не может её потерять. */
-const DRAG_CFG = Object.freeze({holdMs:400, movePx:10, edgePx:56, scrollPx:18});
+const DRAG_CFG = Object.freeze({holdMs:400, movePx:10, edgePx:56, scrollSpeed:480});
 let cancelTimeGesture = null;
 window.addEventListener('blur', () => { if (cancelTimeGesture) cancelTimeGesture(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && cancelTimeGesture) cancelTimeGesture(); });
+document.addEventListener('pointerdown', e => { if (e.pointerType==='touch' && e.isPrimary===false && cancelTimeGesture) cancelTimeGesture(); }, {capture:true,passive:true});
 function slotMovePlan(w, fromI, fromT, toI, toT){
   const value = w && w.d && w.d[fromI] && w.d[fromI][fromT];
   if (!value || !String(value).trim()) return {state:'missing'};
@@ -1413,26 +1483,106 @@ function moveEntry(key, fromI, fromT, toI, toT){
   snapshot('Перенос записи «' + plan.value + '»');
   delete w.d[fromI][fromT]; (w.d[toI] || (w.d[toI] = {}))[toT] = plan.value;
   tidyWeek(key); dirty(); save(); renderWeek();
+  enterMotion($('.cell[data-i="'+toI+'"][data-t="'+toT+'"]'));
   toast(`Перенесено: ${fromT} → ${toT}`, {label:'Отменить', fn:undoLast});
 }
+function dragScrollDelta(y, height, elapsed){
+  const edge=DRAG_CFG.edgePx, speed=DRAG_CFG.scrollSpeed;
+  const strength=y<edge ? -Math.min(1,Math.max(0,(edge-y)/edge)) : y>height-edge ? Math.min(1,Math.max(0,(y-height+edge)/edge)) : 0;
+  return strength*speed*Math.min(32,Math.max(0,elapsed))/1000;
+}
 function bindTimeMove(inp, key){
-  const row = inp.closest('.swr'); let st = {phase:'idle'};
-  const clearTarget = () => $$('.cell.move-target,.cell.move-blocked').forEach(x => x.classList.remove('move-target','move-blocked'));
-  const finish = phase => { if (st.timer) clearTimeout(st.timer); if (st.ghost) st.ghost.remove(); inp.classList.remove('move-src'); row.classList.remove('drag-pending'); document.body.classList.remove('schedule-dragging'); clearTarget(); row._dragPointer = false; row._dragActive = false; if (cancelTimeGesture===finish) cancelTimeGesture=null; st = {phase:phase || 'idle'}; };
-  const cellAt = (x,y) => { const hit = document.elementFromPoint(x,y); return !hit ? null : hit.matches('.cell') ? hit : hit.closest('.swr') && $('.cell',hit.closest('.swr')); };
-  const update = (x,y) => {
-    if (st.ghost){ st.ghost.style.left=x+'px'; st.ghost.style.top=y+'px'; }
-    const cell=cellAt(x,y), w=S.weeks[key]; clearTarget(); st.target=null;
-    if (cell && cell!==inp && cell.dataset.t){ const plan=slotMovePlan(w,+inp.dataset.i,inp.dataset.t,+cell.dataset.i,cell.dataset.t); if (plan.state==='ready'){cell.classList.add('move-target');st.target=cell;} else if (plan.state==='occupied') cell.classList.add('move-blocked'); }
-    const d=y<DRAG_CFG.edgePx?-DRAG_CFG.scrollPx:y>innerHeight-DRAG_CFG.edgePx?DRAG_CFG.scrollPx:0; if(d) window.scrollBy({top:d,behavior:'instant'});
+  const row=inp.closest('.swr'); let st={phase:'idle'};
+  const clearTarget=()=>{
+    if (st.hit) st.hit.classList.remove('move-target','move-blocked');
+    st.hit=null; st.hitClass=null; st.target=null;
   };
-  const activate = e => { if(st.phase!=='pending')return; st.phase='dragging'; row._dragActive=true; inp.blur(); inp.classList.add('move-src'); row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging'); const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value; document.body.appendChild(ghost); st.ghost=ghost; try{inp.setPointerCapture(e.pointerId)}catch(_){} if(navigator.vibrate)navigator.vibrate(12); update(e.clientX,e.clientY); };
-  inp.addEventListener('contextmenu',e=>{if(inp.dataset.filled)e.preventDefault()});
+  const finish=phase=>{
+    const previous=st;
+    if (previous.timer) clearTimeout(previous.timer);
+    if (previous.frame!=null) cancelAnimationFrame(previous.frame);
+    if (previous.ghost) previous.ghost.remove();
+    clearTarget();
+    inp.classList.remove('move-src'); row.classList.remove('drag-pending');
+    document.body.classList.remove('schedule-dragging');
+    row._dragActive=false;
+    if (cancelTimeGesture===finish) cancelTimeGesture=null;
+    st={phase:phase || 'idle'};
+    try { if (inp.hasPointerCapture && inp.hasPointerCapture(previous.id)) inp.releasePointerCapture(previous.id); } catch(_){}
+  };
+  const cellAt=(x,y)=>{
+    const hit=document.elementFromPoint(x,y);
+    return !hit ? null : hit.matches('.cell') ? hit : hit.closest('.swr') && $('.cell',hit.closest('.swr'));
+  };
+  const updateTarget=(x,y)=>{
+    const cell=cellAt(x,y), w=S.weeks[key]; let target=null, cls=null;
+    if (cell && cell!==inp && cell.dataset.t){
+      const plan=slotMovePlan(w,+inp.dataset.i,inp.dataset.t,+cell.dataset.i,cell.dataset.t);
+      if (plan.state==='ready'){ target=cell; cls='move-target'; }
+      else if (plan.state==='occupied') cls='move-blocked';
+    }
+    if (cell!==st.hit || cls!==st.hitClass){
+      clearTarget();
+      if (cls){ cell.classList.add(cls); st.hit=cell; st.hitClass=cls; }
+    }
+    st.target=target;
+  };
+  const schedule=()=>{ if (st.frame==null) st.frame=requestAnimationFrame(paint); };
+  const paint=time=>{
+    st.frame=null; if (st.phase!=='dragging') return;
+    st.ghost.style.transform='translate3d('+st.px+'px,'+st.py+'px,0) translate(-50%,-50%)';
+    const elapsed=st.lastFrame==null ? 16 : time-st.lastFrame; st.lastFrame=time;
+    const delta=dragScrollDelta(st.py,innerHeight,elapsed), before=window.scrollY;
+    if (delta) window.scrollBy({top:delta,behavior:'instant'});
+    updateTarget(st.px,st.py);
+    if (delta && window.scrollY!==before) schedule();
+  };
+  const activate=()=>{
+    if (st.phase!=='pending') return;
+    st.phase='dragging'; row._dragActive=true; inp.blur(); inp.classList.add('move-src');
+    row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging');
+    const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value;
+    ghost.setAttribute('aria-hidden','true'); document.body.appendChild(ghost); st.ghost=ghost;
+    try { inp.setPointerCapture(st.id); } catch(_){}
+    if (navigator.vibrate) navigator.vibrate(12);
+    updateTarget(st.px,st.py); schedule();
+  };
+  inp.addEventListener('contextmenu',e=>{if(inp.hasAttribute('data-filled'))e.preventDefault()});
   inp.addEventListener('selectstart',e=>{if(st.phase==='pending'||st.phase==='dragging')e.preventDefault()});
-  inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; if(cancelTimeGesture)cancelTimeGesture(); finish(); cancelTimeGesture=finish; row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,lastY:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
-  inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx){clearTimeout(st.timer);st.phase=Math.abs(e.clientX-st.x)>Math.abs(e.clientY-st.y)*1.2?'swiping':'scrolling';row.classList.remove('drag-pending');} if(st.phase==='swiping')return; if(st.phase==='scrolling'){if(e.cancelable)e.preventDefault();window.scrollBy({top:st.lastY-e.clientY,behavior:'instant'});st.lastY=e.clientY;return;} if(st.phase==='pending')return; if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
-  const drop=e=>{ if(e.pointerId!==st.id)return; if(st.phase!=='dragging'){finish('cancelled');return;} st.phase='dropping'; const target=st.target, fromI=+inp.dataset.i,fromT=inp.dataset.t,toI=target&&+target.dataset.i,toT=target&&target.dataset.t; finish(target?'completed':'cancelled'); if(target)moveEntry(key,fromI,fromT,toI,toT); };
-  inp.addEventListener('pointerup',drop); inp.addEventListener('pointercancel',()=>finish('cancelled')); inp.addEventListener('lostpointercapture',()=>{if(st.phase==='dragging')finish('cancelled')});
+  inp.addEventListener('pointerdown',e=>{
+    if ((e.button!=null && e.button!==0) || e.isPrimary===false || !inp.value.trim() || e.target!==inp) return;
+    if (cancelTimeGesture) cancelTimeGesture();
+    finish(); cancelTimeGesture=finish; row.classList.add('drag-pending');
+    st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,lastY:e.clientY,frame:null,lastFrame:null};
+    st.timer=setTimeout(activate,DRAG_CFG.holdMs);
+  });
+  inp.addEventListener('pointermove',e=>{
+    if (e.pointerId!==st.id) return;
+    st.px=e.clientX; st.py=e.clientY;
+    if (st.phase==='pending' && Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx){
+      clearTimeout(st.timer);
+      st.phase=Math.abs(e.clientX-st.x)>Math.abs(e.clientY-st.y)*1.2 ? 'swiping' : 'scrolling';
+      row.classList.remove('drag-pending');
+    }
+    if (st.phase==='scrolling'){
+      if (e.cancelable) e.preventDefault();
+      window.scrollBy({top:st.lastY-e.clientY,behavior:'instant'}); st.lastY=e.clientY; return;
+    }
+    if (st.phase!=='dragging') return;
+    if (e.cancelable) e.preventDefault();
+    schedule();
+  });
+  inp.addEventListener('pointerup',e=>{
+    if (e.pointerId!==st.id) return;
+    if (st.phase!=='dragging'){ finish('cancelled'); return; }
+    updateTarget(e.clientX,e.clientY);
+    st.phase='dropping';
+    const target=st.target, fromI=+inp.dataset.i, fromT=inp.dataset.t, toI=target && +target.dataset.i, toT=target && target.dataset.t;
+    finish(target?'completed':'cancelled');
+    if (target) moveEntry(key,fromI,fromT,toI,toT);
+  });
+  inp.addEventListener('pointercancel',e=>{if(e.pointerId===st.id)finish('cancelled')});
+  inp.addEventListener('lostpointercapture',e=>{if(e.pointerId===st.id)finish('cancelled')});
 }
 /* ---- удаление одной записи ---- */
 function deleteEntry(key, i, t){
@@ -1446,7 +1596,7 @@ function deleteEntry(key, i, t){
     setCell(key, i, t, old); rerenderAfterDayChange(); toast('Запись возвращена');
   }});
 }
-/* свайп влево по строке открывает кнопку «Удалить»; сам свайп ничего не удаляет */
+/* свайп открывает «Удалить», полный свайп удаляет с отменой; touchcancel никогда не удаляет */
 const RW = row => row.classList.contains('cw') ? 76 : 92;
 function closeOpenRows(except){ $$('.swr.open').forEach(r => { if (r !== except){ r.classList.add('settle'); r.classList.remove('open'); } }); }
 document.addEventListener('touchstart', e => { if (!e.target.closest('.swr.open .rdel')) closeOpenRows(); }, {passive: true, capture: true});
@@ -1456,6 +1606,7 @@ function bindRowSwipe(row){
   const slider = () => row.classList.contains('cw') ? null : $('.rin', row); // в сетке имя не сдвигаем — кнопка ложится поверх правого края
   let st = null;
   row.addEventListener('touchstart', e => {
+    if (st) cancel();
     st = null;
     if (e.touches.length !== 1 || e.target.closest('.rdel')) return;
     const inp = $('.cell', row); if (!inp || !inp.value.trim() || document.activeElement === inp) return;
@@ -1463,6 +1614,7 @@ function bindRowSwipe(row){
   }, {passive: true});
   row.addEventListener('touchmove', e => {
     if (!st) return;
+    if (e.touches.length!==1){ cancel(); return; }
     // После срабатывания удержания единственным владельцем жеста остаётся перенос.
     if (row._dragActive){ st = null; return; }
     const dx = e.touches[0].clientX - st.x, dy = e.touches[0].clientY - st.y;
@@ -1489,7 +1641,13 @@ function bindRowSwipe(row){
     row.classList.toggle('open', s.open ? s.dx < 30 : s.dx < -45);
   };
   row.addEventListener('touchend', end);
-  row.addEventListener('touchcancel', end);
+  const cancel = () => {
+    if (!st) return;
+    const wasOpen=st.open; st=null;
+    row.classList.remove('drag','full'); row.classList.add('settle'); row.classList.toggle('open',wasOpen);
+    const sl=slider(); if (sl) sl.style.transform='';
+  };
+  row.addEventListener('touchcancel', cancel);
 }
 /* ---- меню дня и очистка дня ---- */
 function openDayMenu(key, i){
@@ -1696,7 +1854,7 @@ function modal(inner, width=560, options={}){
   document.body.appendChild(dlg);
   let closed=false;
   const onKey = e => {
-    if (e.key==='Escape') close();
+    if (e.key==='Escape') close(true);
     if (e.key==='Tab' && options.sheet){
       const items=$$('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),summary,[tabindex="0"]',card).filter(el=>el.getClientRects().length);
       if (!items.length) return;
@@ -1705,17 +1863,29 @@ function modal(inner, width=560, options={}){
       else if (!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
     }
   };
-  const close = () => {
+  const close = (animated=false) => {
     if (closed) return; closed=true;
     const active=document.activeElement; if (active && dlg.contains(active) && active.blur) active.blur();
-    dlg.remove(); document.removeEventListener('keydown', onKey);
-    if (options.sheet && --sheetCount===0) document.body.style.overflow=sheetOverflow;
-    if (previous && previous.isConnected && previous.focus) previous.focus({preventScroll:true});
-    setTimeout(flushSyncRender, 0);
+    document.removeEventListener('keydown', onKey);
+    let removed=false, timer;
+    const remove = () => {
+      if (removed) return; removed=true; clearTimeout(timer);
+      dlg.remove();
+      if (options.sheet && --sheetCount===0) document.body.style.overflow=sheetOverflow;
+      if (previous && previous.isConnected && previous.focus && !document.querySelector('.modal:not([aria-hidden])')) previous.focus({preventScroll:true});
+      setTimeout(flushSyncRender, 0);
+    };
+    if (animated && card.animate && dlg.animate && !reducedMotion()){
+      dlg.setAttribute('aria-hidden','true'); dlg.style.pointerEvents='none';
+      const panel=card.animate([{transform:'translateY(0)'},{transform:'translateY(12px)'}],{duration:MOTION.exitMs,easing:MOTION.easing});
+      const backdrop=dlg.animate([{opacity:1},{opacity:0}],{duration:MOTION.exitMs,easing:'ease-out'});
+      timer=setTimeout(remove,MOTION.exitMs+80);
+      Promise.all([panel.finished,backdrop.finished]).then(remove,remove);
+    } else remove();
   };
   document.addEventListener('keydown', onKey);
-  dlg.addEventListener('mousedown', e => { if (e.target===dlg) close(); });
-  dlg.addEventListener('click', e => { if (e.target.closest('[data-x]')) close(); });
+  dlg.addEventListener('mousedown', e => { if (e.target===dlg) close(true); });
+  dlg.addEventListener('click', e => { if (e.target.closest('[data-x]')) close(true); });
   if (options.sheet) setTimeout(()=>{ const b=$('[data-x]',card); if (!closed && b) b.focus({preventScroll:true}); },0);
   return {el: card, close};
 }
