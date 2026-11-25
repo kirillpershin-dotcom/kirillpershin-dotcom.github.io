@@ -327,7 +327,6 @@ main,section,.card{min-width:0}
 /* карточка ребёнка */
 .kstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
 .kstats div{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
-.kstats div:first-child{border-color:var(--accent);background:var(--accent-soft)}
 .kstats b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
 .kstats span{font-size:12px;color:var(--muted)}
 .hbar{display:grid;grid-template-columns:52px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:13px;margin:3px 0}
@@ -552,7 +551,7 @@ table.grid .dedit .dlong{display:none}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-23.5';
+const APP_VERSION = '2026-11-25.1';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -818,6 +817,7 @@ function go(view, opts={}){ Object.assign(V, opts, {view}); render(); window.scr
 
 /* ============ render: shell ============ */
 function render(){
+  if (cancelTimeGesture) cancelTimeGesture();
   $$('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.v===V.view));
   renderBanner(); renderUpdBanner();
   $('#main').onclick = null;
@@ -948,6 +948,7 @@ function renderHome(){
 
 /* ============ WEEK ============ */
 function renderWeek(){
+  if (cancelTimeGesture) cancelTimeGesture();
   const key = V.week, w = S.weeks[key], nd = S.settings.days;
   const mon = pdate(key), tds = ymd(today());
   const sl = weekSlots(w);
@@ -961,7 +962,8 @@ function renderWeek(){
   const wev = eventsBetween(key, ymd(addDays(mon,6)));
   const offDay = dates.map(d => eventsOn(ymd(d)).find(e=>e.off));
   const dcls = (d,i) => [ymd(d)===tds?'today':'', offDay[i]?'off':''].join(' ');
-  const satH = nd >= 6 && !V.satOpen, isSat = i => i === 5 && satH; // суббота в сетке открывается по нажатию
+  if (V.day === 5) V.satOpen = true;
+  const satH = nd >= 6 && !V.satOpen, isSat = i => i === 5 && satH;
 
   $('#main').innerHTML = `
   <div class="phead" id="wHead">
@@ -976,15 +978,14 @@ function renderWeek(){
   <div class="tools">
     <button id="wCopyTo" ${empty?'disabled':''} title="Скопировать или перенести неделю либо день — выбор в следующем окне"><svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Копировать…</button>
     <button id="wShare" title="Отправить расписание недели, дня или ребёнка — выбор в следующем окне"><svg viewBox="0 0 24 24"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>Отправить…</button>
-    <button id="wDay" title="Действия с днём: формула, отправка, копирование, очистка"><svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/></svg>Действия дня</button>
   </div>
   <div class="savestat" id="saveStat" aria-live="polite"></div>
   <div class="gridwrap desk"><table class="grid"><thead><tr><th class="time"></th>
-    ${dates.map((d,i)=> isSat(i) ? `<th class="satc ${dcls(d,i)}" data-satopen title="Показать субботу"><span>${DAY[5]}<br>${d.getDate()}</span><small data-cnt="5"></small></th>` : `<th class="${dcls(d,i)}">${i===5 ? '<button class="satx" data-satclose title="Скрыть субботу" aria-label="Скрыть субботу">×</button>' : ''}<button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><button class="dmore" data-dm="${i}" title="Действия с днём: расчёт, отправка, очистка" aria-label="Действия с днём">⋯</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
+    ${dates.map((d,i)=> isSat(i) ? `<th class="satc ${dcls(d,i)}" data-satopen title="Показать субботу"><span>${DAY[5]}<br>${d.getDate()}</span><small data-cnt="5"></small></th>` : `<th class="${dcls(d,i)}">${i===5 ? '<button class="satx" data-satclose title="Скрыть субботу" aria-label="Скрыть субботу">×</button>' : ''}<button class="dayhd" data-day="${i}" title="Отправить расписание этого дня">${DAY[i]} ${d.getDate()}</button><span class="cnt" data-cnt="${i}"></span>${offDay[i]?`<span class="offlbl">${esc(offDay[i].title)}</span>`:''}</th>`).join('')}
   </tr></thead><tbody>
     ${sl.map(t=>`<tr><td class="time">${t}</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen>${val(5,t) ? '<i></i>' : ''}</td>` : `<td class="${dcls(d,i)}"><div class="cw swr"><input class="cell${cls(val(i,t))}" data-i="${i}" data-t="${t}" value="${esc(val(i,t))}" autocomplete="off"${val(i,t)?' data-filled':''}><button class="snd ${val(i,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(i,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button><button class="rdel" tabindex="-1">Удалить</button></div></td>`).join('')}</tr>`).join('')}
   </tbody><tfoot><tr><td class="time">учёт<br>дня</td>${dates.map((d,i)=> isSat(i) ? `<td class="satc ${dcls(d,i)}" data-satopen></td>` : `<td class="dacc ${dcls(d,i)}" data-dacc="${i}"></td>`).join('')}</tr></tfoot></table></div>
-  <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button data-i="${i}" class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}">${DAY[i]} ${d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}</div>
+  <div class="daytabs" id="dayTabs">${dates.map((d,i)=>`<button ${i===5&&!V.satOpen?'data-satopen':'data-i="'+i+'"'} class="${i===V.day?'on':''} ${ymd(d)===tds?'today':''}" aria-label="${i===5&&!V.satOpen?'Показать субботу':DAY[i]}">${i===5&&!V.satOpen?'+ Сб':DAY[i]+' '+d.getDate()}<small data-cnt="${i}"></small></button>`).join('')}${nd>=6&&V.satOpen?'<button data-satclose aria-label="Скрыть субботу" style="flex:0 0 32px;min-width:32px">×</button>':''}</div>
   <div class="daylist" id="dayList">${sl.map(t=>`<div class="r swr"><div class="rin"><div class="t">${t}</div><input class="cell${cls(val(V.day,t))}" data-i="${V.day}" data-t="${t}" value="${esc(val(V.day,t))}" autocomplete="off"${val(V.day,t)?' data-filled':''}><button class="snd ${val(V.day,t)?'on':''}" data-card title="Открыть карточку ребёнка" tabindex="-1">${CARD_ICON}</button><button class="rdx ${val(V.day,t)?'on':''}" title="Удалить запись (можно отменить)" tabindex="-1"><svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13M10 11v6M14 11v6"/></svg></button></div><button class="rdel" tabindex="-1">Удалить</button></div>`).join('')}</div>
   <div class="dfoot"><div class="dfhead"><span class="small muted">Учёт дня · ${DAY[V.day]} ${dates[V.day].getDate()}</span></div><div class="dacc" data-dacc="${V.day}"></div></div>
   <div class="wsum" id="wSum"></div>
@@ -1002,10 +1003,9 @@ function renderWeek(){
   $('#wN').onclick = () => go('acc', {accWeek: key, accMonth: weekMonth(key)});
   $('#wShare').onclick = () => openSend({mode:'week', week:key, day:V.day});
   $('#wCopyTo').onclick = () => openCopy();
-  $('#wDay').onclick = e => { e.stopPropagation(); openDayMenu(key, V.day); };
   $$('#main [data-ev]').forEach(b => b.onclick = () => openEvent(evList().find(e=>e.id===b.dataset.ev)));
   $$('#main .dayhd').forEach(b => b.onclick = () => openSend({mode:'day', week:key, day:+b.dataset.day}));
-  $$('#dayTabs button').forEach(b => b.onclick = () => { V.day = +b.dataset.i; renderWeek(); });
+  $$('#dayTabs [data-i]').forEach(b => b.onclick = () => { V.day = +b.dataset.i; renderWeek(); });
   $('#wNotes').oninput = e => { e.target.rows = Math.max(4, e.target.value.split('\n').length+1); const v = e.target.value; if (v.trim()){ ensureWeek(key).notes = v; } else if (S.weeks[key]) { delete S.weeks[key].notes; tidyWeek(key); } save(); };
 
   const cells = $$('.cell', $('#main'));
@@ -1030,9 +1030,8 @@ function renderWeek(){
   });
   $$('#main .rdel').forEach(b => b.onclick = e => { e.stopPropagation(); const inp = $('.cell', b.closest('.swr')); deleteEntry(key, +inp.dataset.i, inp.dataset.t); });
   $$('#main .swr').forEach(bindRowSwipe);
-  $$('#main [data-dm]').forEach(b => b.onclick = e => { e.stopPropagation(); openDayMenu(key, +b.dataset.dm); });
-  $$('#main [data-satopen]').forEach(b => b.onclick = () => { V.satOpen = true; renderWeek(); });
-  $$('#main [data-satclose]').forEach(b => b.onclick = e => { e.stopPropagation(); V.satOpen = false; renderWeek(); });
+  $$('#main [data-satopen]').forEach(b => b.onclick = () => { V.satOpen = true; if (b.closest('#dayTabs')) V.day = 5; renderWeek(); });
+  $$('#main [data-satclose]').forEach(b => b.onclick = e => { e.stopPropagation(); V.satOpen = false; if (V.day===5) V.day=4; renderWeek(); });
   renderSaveStat();
   // свайпы внутри списка и сетки не листают дни и недели: по записи свайп только открывает «Удалить»
   updateWeekNumbers();
@@ -1313,6 +1312,9 @@ function openDayCalc(key, i){
    idle → pending → dragging → dropping → completed/cancelled.
    Исходная запись остаётся на месте до успешного drop: отмена не может её потерять. */
 const DRAG_CFG = Object.freeze({holdMs:400, movePx:10, edgePx:56, scrollPx:18});
+let cancelTimeGesture = null;
+window.addEventListener('blur', () => { if (cancelTimeGesture) cancelTimeGesture(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible' && cancelTimeGesture) cancelTimeGesture(); });
 function slotMovePlan(w, fromI, fromT, toI, toT){
   const value = w && w.d && w.d[fromI] && w.d[fromI][fromT];
   if (!value || !String(value).trim()) return {state:'missing'};
@@ -1333,7 +1335,7 @@ function moveEntry(key, fromI, fromT, toI, toT){
 function bindTimeMove(inp, key){
   const row = inp.closest('.swr'); let st = {phase:'idle'};
   const clearTarget = () => $$('.cell.move-target,.cell.move-blocked').forEach(x => x.classList.remove('move-target','move-blocked'));
-  const finish = phase => { if (st.timer) clearTimeout(st.timer); if (st.ghost) st.ghost.remove(); inp.classList.remove('move-src'); row.classList.remove('drag-pending'); document.body.classList.remove('schedule-dragging'); clearTarget(); row._dragPointer = false; row._dragActive = false; st = {phase:phase || 'idle'}; };
+  const finish = phase => { if (st.timer) clearTimeout(st.timer); if (st.ghost) st.ghost.remove(); inp.classList.remove('move-src'); row.classList.remove('drag-pending'); document.body.classList.remove('schedule-dragging'); clearTarget(); row._dragPointer = false; row._dragActive = false; if (cancelTimeGesture===finish) cancelTimeGesture=null; st = {phase:phase || 'idle'}; };
   const cellAt = (x,y) => { const hit = document.elementFromPoint(x,y); return !hit ? null : hit.matches('.cell') ? hit : hit.closest('.swr') && $('.cell',hit.closest('.swr')); };
   const update = (x,y) => {
     if (st.ghost){ st.ghost.style.left=x+'px'; st.ghost.style.top=y+'px'; }
@@ -1344,7 +1346,7 @@ function bindTimeMove(inp, key){
   const activate = e => { if(st.phase!=='pending')return; st.phase='dragging'; row._dragActive=true; inp.blur(); inp.classList.add('move-src'); row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging'); const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value; document.body.appendChild(ghost); st.ghost=ghost; try{inp.setPointerCapture(e.pointerId)}catch(_){} if(navigator.vibrate)navigator.vibrate(12); update(e.clientX,e.clientY); };
   inp.addEventListener('contextmenu',e=>{if(inp.dataset.filled)e.preventDefault()});
   inp.addEventListener('selectstart',e=>{if(st.phase==='pending'||st.phase==='dragging')e.preventDefault()});
-  inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; finish(); row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,lastY:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
+  inp.addEventListener('pointerdown',e=>{ if((e.button!=null&&e.button!==0)||!inp.value.trim()||e.target!==inp)return; if(cancelTimeGesture)cancelTimeGesture(); finish(); cancelTimeGesture=finish; row._dragPointer=true; row.classList.add('drag-pending'); st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,lastY:e.clientY,timer:null,ghost:null,target:null}; st.timer=setTimeout(()=>activate(e),DRAG_CFG.holdMs); });
   inp.addEventListener('pointermove',e=>{ if(e.pointerId!==st.id)return; if(st.phase==='pending'&&Math.hypot(e.clientX-st.x,e.clientY-st.y)>DRAG_CFG.movePx){clearTimeout(st.timer);st.phase=Math.abs(e.clientX-st.x)>Math.abs(e.clientY-st.y)*1.2?'swiping':'scrolling';row.classList.remove('drag-pending');} if(st.phase==='swiping')return; if(st.phase==='scrolling'){if(e.cancelable)e.preventDefault();window.scrollBy({top:st.lastY-e.clientY,behavior:'instant'});st.lastY=e.clientY;return;} if(st.phase==='pending')return; if(st.phase!=='dragging')return; if(e.cancelable)e.preventDefault(); update(e.clientX,e.clientY); });
   const drop=e=>{ if(e.pointerId!==st.id)return; if(st.phase!=='dragging'){finish('cancelled');return;} st.phase='dropping'; const target=st.target, fromI=+inp.dataset.i,fromT=inp.dataset.t,toI=target&&+target.dataset.i,toT=target&&target.dataset.t; finish(target?'completed':'cancelled'); if(target)moveEntry(key,fromI,fromT,toI,toT); };
   inp.addEventListener('pointerup',drop); inp.addEventListener('pointercancel',()=>finish('cancelled')); inp.addEventListener('lostpointercapture',()=>{if(st.phase==='dragging')finish('cancelled')});
@@ -1606,7 +1608,7 @@ function modal(inner, width=560){
   dlg.innerHTML = `<div class="card" style="width:min(${width}px,100%)">${inner}</div>`;
   document.body.appendChild(dlg);
   const onKey = e => { if (e.key==='Escape') close(); };
-  const close = () => { dlg.remove(); document.removeEventListener('keydown', onKey); };
+  const close = () => { dlg.remove(); document.removeEventListener('keydown', onKey); setTimeout(flushSyncRender, 0); };
   document.addEventListener('keydown', onKey);
   dlg.addEventListener('mousedown', e => { if (e.target===dlg) close(); });
   dlg.addEventListener('click', e => { if (e.target.closest('[data-x]')) close(); });
@@ -1633,13 +1635,14 @@ function openSend(o={}){
       opts.innerHTML = `<div class="segfull">${[...Array(S.settings.days)].map((_,i)=>`<button class="${i===st.day?'on':''}" data-d="${i}">${DAY[i]} ${addDays(mon,i).getDate()}</button>`).join('')}</div>`;
       $$('[data-d]', opts).forEach(b => b.onclick = () => { st.day = +b.dataset.d; draw(); });
     } else if (st.mode==='kid'){
-      const wk = kidsOfWeek(), lim = ymd(addDays(today(),-150));
-      const rest = [...index().values()].filter(k => !wk.some(([key])=>key===k.key) && (k.key===st.kid || k.ss.some(x=>x.ds>=lim))).sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-      if (!st.kid) st.kid = (wk[0]||[])[0] || (rest[0]||{}).key;
-      opts.innerHTML = `<select id="sKid" class="date" style="width:100%">${wk.length?`<optgroup label="Есть на этой неделе">${wk.map(([k,n])=>`<option value="${esc(k)}">${esc(n)}</option>`).join('')}</optgroup>`:''}<optgroup label="Остальные">${rest.map(k=>`<option value="${esc(k.key)}">${esc(k.name)}</option>`).join('')}</optgroup></select>`;
+      const wk = kidsOfWeek();
+      if (!wk.some(([key])=>key===st.kid)) st.kid = wk.length ? wk[0][0] : null;
+      opts.innerHTML = `<select id="sKid" class="date" style="width:100%" ${wk.length?'':'disabled'}>${wk.length?wk.map(([k,n])=>`<option value="${esc(k)}">${esc(n)}</option>`).join(''):'<option>На этой неделе занятий нет</option>'}</select>`;
       const sel = $('#sKid', opts); sel.value = st.kid; sel.onchange = () => { st.kid = sel.value; draw(); };
     } else opts.innerHTML = '<div class="small muted" style="text-align:center">Всё расписание недели — например, для коллеги</div>';
     const kid = index().get(st.kid);
+    $('#sCp', el).disabled = st.mode==='kid' && !kid;
+    if ($('#sSh', el)) $('#sSh', el).disabled = st.mode==='kid' && !kid;
     $('#sText', el).value = st.mode==='week' ? weekText(st.week, st.ev) : st.mode==='day' ? dayText(st.week, st.day, st.ev) : kid ? kidText(kid, st.week, st.ev) : 'Выберите ребёнка';
   }
   $$('#sMode button', el).forEach(b => b.onclick = () => { st.mode = b.dataset.m; draw(); });
@@ -1916,6 +1919,9 @@ function openKid(key, weekKey, slot){
   const sw = slot && S.weeks[weekKey], stxt = sw && sw.d[slot.i] && sw.d[slot.i][slot.t] || '';
   const m = modal(`${mhead(esc(kid.name))}
     <div class="kline" id="kLine">${esc(kidLine(key))}</div>
+    <div id="kActions"></div>
+    <div class="kstats"><div><b>${c30}</b><span>за 30 дней</span></div><div><b>${c365}</b><span>за 12 месяцев</span></div><div><b>${past.length}</b><span>всего</span></div></div>
+    <div id="kWeek"></div>
     ${stxt ? `<div class="kslot" id="kSlot"><div class="small muted">${esc(dayTitle(weekKey, slot.i))} · ${slot.t}</div>
       <div class="row" style="margin-top:4px;flex-wrap:nowrap"><input class="search" id="ksTxt" value="${esc(stxt)}" autocomplete="off" style="flex:1;min-width:0"><button class="btn" id="ksSave">Сохранить</button><button class="btn danger" id="ksDel">Удалить</button></div></div>` : ''}
     <div class="small muted">${obs.label}${past.length ? ` · с ${dShort(past[0].date)} ${past[0].date.getFullYear()}` : ''}${usual.length ? ' · обычно ' + usual.join(', ') : ''}</div>
@@ -1929,8 +1935,6 @@ function openKid(key, weekKey, slot){
       <label>Рекомендации<textarea id="kpRecs" rows="2" placeholder="Домашние задания, советы родителям">${esc(P.recs||'')}</textarea></label>
       <div class="hint">Сохраняется сразу и синхронизируется между устройствами. Цель видна на «Главной» в списке дня.</div>
     </div>
-    <div class="kstats"><div><b>${c30}</b><span>за 30 дней</span></div><div><b>${c365}</b><span>за 12 месяцев</span></div><div><b>${past.length}</b><span>всего</span></div></div>
-    <div id="kWeek"></div>
     <div id="kRenBox" style="display:none;margin-top:10px"><div class="row"><input class="search" id="kNew" style="flex:1;min-width:0" value="${esc(kid.name)}"><button class="btn" id="kRen">Сохранить</button></div>
       <div class="hint">Если вписать имя другого ребёнка, записи объединятся.</div></div>
     <h3 style="margin-top:16px">Занятий по месяцам</h3>
@@ -1938,7 +1942,8 @@ function openKid(key, weekKey, slot){
   function draw(){
     const ws = kid.ss.filter(s => s.week === wk);
     $('#kWeek', m.el).innerHTML = `<div class="navrow" style="margin-top:14px"><button class="nav" data-w="-7">‹</button><b class="trunc">${weekTitle(wk, S.settings.days)}</b><button class="nav" data-w="7">›</button></div>
-      <div style="margin-top:6px">${ws.length ? `<table class="t"><tbody>${ws.map(s=>`<tr><td class="nw">${DAY[s.i]}, ${dShort(s.date)}</td><td class="n">${s.t}</td><td class="muted">${esc(s.txt)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted small" style="text-align:center;padding:8px">На этой неделе занятий нет</div>'}</div>
+      <div style="margin-top:6px">${ws.length ? `<table class="t"><tbody>${ws.map(s=>`<tr><td class="nw">${DAY[s.i]}, ${dShort(s.date)}</td><td class="n">${s.t}</td><td class="muted">${esc(s.txt)}</td></tr>`).join('')}</tbody></table>` : '<div class="muted small" style="text-align:center;padding:8px">На этой неделе занятий нет</div>'}</div>`;
+    $('#kActions', m.el).innerHTML = `
       <button class="btn" id="kMove" style="padding:10px;width:100%;margin-top:10px;white-space:normal" ${ws.some(s => s.i < S.settings.days) ? '' : 'disabled'}>Перенести расписание ребёнка на следующую неделю</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><button class="btn" id="kRenOpen" style="padding:10px">Переименовать</button><button class="btn pri" id="kSend" style="padding:10px">Отправить расписание</button></div>`;
     $$('[data-w]', m.el).forEach(b => b.onclick = () => { wk = ymd(addDays(pdate(wk), +b.dataset.w)); draw(); });
@@ -1973,12 +1978,16 @@ function nextCourseText(txt, add, cont){
   if (n > tot) return {txt: p.base + q, over: true};
   return {txt: p.base + ' ' + n + '/' + tot + q, over: false};
 }
-function kidMovePlan(key, wk, cont){
+function kidMovePlan(key, wk, cont, days){
   const kid = index().get(key); const tk = ymd(addDays(pdate(wk), 7)), tw = S.weeks[tk], tmon = pdate(tk);
   const src = kid ? kid.ss.filter(s => s.week === wk && s.i < S.settings.days) : [];
   const course = src.filter(s => /^\d+\/\d+$/.test(s.p.suffix || '')).length; // сколько занятий курса на этой неделе
-  const rows = src.map((s, n) => {
-    const nt = nextCourseText(s.txt, course, cont);
+  const ends = {}, counts = {};
+  src.forEach(s => { const m = /^(\d+)\/(\d+)$/.exec(s.p.suffix || ''); if (m) ends[m[2]] = Math.max(ends[m[2]] || 0, +m[1]); });
+  const rows = src.filter(s => !days || days.has(s.i)).map(s => {
+    const m = /^(\d+)\/(\d+)$/.exec(s.p.suffix || '');
+    const add = m ? ends[m[2]] + (counts[m[2]] = (counts[m[2]] || 0) + 1) - +m[1] : course;
+    const nt = nextCourseText(s.txt, add, cont);
     const cur = tw && tw.d[s.i] && tw.d[s.i][s.t] || '';
     const st = !cur.trim() ? 'add' : parseEntry(cur).key === key ? 'same' : 'conflict';
     return {i: s.i, t: s.t, date: addDays(tmon, s.i), txt: nt.txt, over: nt.over, cur, st};
@@ -1987,15 +1996,19 @@ function kidMovePlan(key, wk, cont){
   return {kid, tk, rows, others, hasCourse: course > 0};
 }
 function openKidMove(key, wk){
-  const st = {cont: true, pick: {}};
+  const source = kidMovePlan(key, wk, true);
+  if (!source.kid) return;
+  const st = {cont: true, pick: {}, days: new Set(source.rows.map(r=>r.i))};
   const m = modal(`<div id="kmBox"></div>`, 560);
   function draw(){
-    const P = kidMovePlan(key, wk, st.cont);
+    const P = kidMovePlan(key, wk, st.cont, st.days);
     const conf = P.rows.filter(r => r.st === 'conflict');
     conf.forEach(r => { const k = r.i + '|' + r.t; if (!st.pick[k]) st.pick[k] = 'keep'; });
     const line = r => `${DAY[r.i]}, ${dShort(r.date)} · ${r.t}`;
     $('#kmBox', m.el).innerHTML = `${mhead('Перенести на следующую неделю')}
       <div class="small muted" style="margin-top:4px"><b>${esc(P.kid.name)}</b>: ${weekTitle(wk, S.settings.days)} → <b>${weekTitle(P.tk, S.settings.days)}</b>. Эта неделя не меняется.</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">${[...new Set(source.rows.map(r=>r.i))].map(i=>`<label class="row" style="gap:6px;min-height:44px"><input type="checkbox" data-kmday="${i}" ${st.days.has(i)?'checked':''}>${DAY[i]} · ${source.rows.filter(r=>r.i===i).map(r=>r.t).join(', ')}</label>`).join('')}</div>
+      ${st.days.size?'':'<div class="hint">Выберите хотя бы один день.</div>'}
       ${P.hasCourse ? `<label style="display:flex;gap:8px;align-items:flex-start;margin-top:10px;color:var(--ink)"><input type="checkbox" id="kmCont" style="flex:none;margin-top:3px" ${st.cont ? 'checked' : ''}><span>Продолжить номера занятий (например, 3/10 → 4/10)</span></label>` : ''}
       <table class="t km" style="margin-top:10px"><tbody>${P.rows.map(r => {
         const k = r.i + '|' + r.t;
@@ -2012,11 +2025,13 @@ function openKidMove(key, wk){
     $('#kmSum', m.el).innerHTML = `Будет записано: <b>${add + rep.length}</b>` + (rep.length ? ` · <span class="flag">заменится: ${rep.map(r => esc(r.cur)).join(', ')}</span>` : '') + (keep ? ` · оставлю как есть: ${keep}` : '') + (same ? ` · уже стоит: ${same}` : '');
     $('#kmGo', m.el).disabled = !(add + rep.length);
     const cb = $('#kmCont', m.el); if (cb) cb.onchange = () => { st.cont = cb.checked; draw(); };
+    $$('[data-kmday]', m.el).forEach(cb => cb.onchange = () => { if (cb.checked) st.days.add(+cb.dataset.kmday); else st.days.delete(+cb.dataset.kmday); draw(); });
     $$('.kmpick', m.el).forEach(g => $$('button', g).forEach(b => b.onclick = () => { st.pick[g.dataset.k] = b.dataset.v; draw(); }));
     if ($('#kmKeepAll', m.el)) $('#kmKeepAll', m.el).onclick = () => { conf.forEach(r => st.pick[r.i + '|' + r.t] = 'keep'); draw(); };
     if ($('#kmRepAll', m.el)) $('#kmRepAll', m.el).onclick = () => { conf.forEach(r => st.pick[r.i + '|' + r.t] = 'replace'); draw(); };
     $('#kmGo', m.el).onclick = () => {
-      const Q = kidMovePlan(key, wk, st.cont);
+      const Q = kidMovePlan(key, wk, st.cont, st.days);
+      if (JSON.stringify(Q.rows)!==JSON.stringify(P.rows)){ draw(); toast('Расписание изменилось. Проверьте обновлённый список перед переносом.'); return; }
       const go_ = Q.rows.filter(r => r.st === 'add' || r.st === 'conflict' && st.pick[r.i + '|' + r.t] === 'replace');
       if (!go_.length) return;
       snapshot('Перенос «' + Q.kid.name + '» на следующую неделю');
@@ -2962,27 +2977,37 @@ const b64enc = str => { const by = new TextEncoder().encode(str); let bin = ''; 
 const b64dec = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\s/g, '')), c => c.charCodeAt(0)));
 function ghHeaders(extra){ return Object.assign({Authorization: 'Bearer ' + SYNC.cfg.token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}, extra || {}); }
 const ghUrl = () => `https://api.github.com/repos/${SYNC.cfg.repo}/contents/${encodeURIComponent(SYNC.cfg.path || 'raspisanie.json')}`;
+async function ghFetch(url, options){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(url, {...options, signal: controller.signal});
+    const text = await response.text();
+    return {ok:response.ok, status:response.status, text:async()=>text, json:async()=>JSON.parse(text)};
+  } catch(e){ if (e.name==='AbortError') throw new Error('Сеть не ответила за 20 секунд. Изменения сохранены на устройстве — повторите синхронизацию.'); throw e; }
+  finally { clearTimeout(timer); }
+}
 async function ghCheck(){
-  const r = await fetch(`https://api.github.com/repos/${SYNC.cfg.repo}`, {headers: ghHeaders(), cache: 'no-store'});
+  const r = await ghFetch(`https://api.github.com/repos/${SYNC.cfg.repo}`, {headers: ghHeaders(), cache: 'no-store'});
   if (r.status === 401) throw new Error('ключ не подходит — проверьте, что токен скопирован целиком');
   if (r.status === 404 || r.status === 403) throw new Error('хранилище «' + SYNC.cfg.repo + '» не найдено или у ключа нет к нему доступа');
   if (!r.ok) throw new Error('GitHub ответил ' + r.status);
   const j = await r.json(); return j;
 }
 async function ghGet(){
-  const r = await fetch(ghUrl(), {headers: ghHeaders(), cache: 'no-store'});
+  const r = await ghFetch(ghUrl(), {headers: ghHeaders(), cache: 'no-store'});
   if (r.status === 404) return null;
   if (r.status === 401) throw new Error('ключ не подходит или истёк');
   if (!r.ok) throw new Error('GitHub ответил ' + r.status);
   const j = await r.json();
   let text = j.content ? b64dec(j.content) : null;
-  if (!text){ const r2 = await fetch(ghUrl(), {headers: ghHeaders({Accept: 'application/vnd.github.raw+json'}), cache: 'no-store'}); text = await r2.text(); }
+  if (!text){ const r2 = await ghFetch(ghUrl(), {headers: ghHeaders({Accept: 'application/vnd.github.raw+json'}), cache: 'no-store'}); text = await r2.text(); }
   return {sha: j.sha, data: JSON.parse(text)};
 }
 async function ghPut(data, sha){
   const body = {message: 'Расписание: синхронизация (' + deviceName() + ')', content: b64enc(JSON.stringify(data))};
   if (sha) body.sha = sha;
-  const r = await fetch(ghUrl(), {method: 'PUT', headers: ghHeaders({'Content-Type': 'application/json'}), body: JSON.stringify(body)});
+  const r = await ghFetch(ghUrl(), {method: 'PUT', headers: ghHeaders({'Content-Type': 'application/json'}), body: JSON.stringify(body)});
   if (r.status === 409 || r.status === 422) return false; // файл успели изменить с другого устройства — повторим
   if (r.status === 403 || r.status === 404) throw new Error('у ключа нет права записи в хранилище (нужно Contents: Read and write)');
   if (!r.ok) throw new Error('GitHub ответил ' + r.status);
@@ -3042,12 +3067,16 @@ async function syncNow(){
     setSync(navigator.onLine ? 'err' : 'offline', e.message || String(e));
   } finally {
     SYNC.busy = false;
-    if (changed){
+    if (changed || SYNC.renderLater){
       const a = document.activeElement, typing = a && /INPUT|TEXTAREA|SELECT/.test(a.tagName) && a.closest('#main, .modal');
-      if (!typing && !document.querySelector('.modal')) render(); else SYNC.renderLater = true;
+      if (!typing && !document.querySelector('.modal') && !cancelTimeGesture){ SYNC.renderLater = false; render(); } else SYNC.renderLater = true;
     }
     if (SYNC.again){ SYNC.again = false; setTimeout(syncNow, 600); }
   }
+}
+function flushSyncRender(){
+  const a = document.activeElement;
+  if (SYNC.renderLater && !cancelTimeGesture && !document.querySelector('.modal') && !(a && /INPUT|TEXTAREA|SELECT/.test(a.tagName))){ SYNC.renderLater=false; render(); }
 }
 function syncStart(){
   SYNC.cfg = syncCfg(); setSync(SYNC.cfg ? 'off' : 'none');
