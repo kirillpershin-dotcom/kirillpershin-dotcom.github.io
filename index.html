@@ -606,6 +606,8 @@ nav.tabs button:active svg{transform:scale(.9)}
 .swr.drag-pending .cell[data-filled]{background:var(--line2)}
 .cell{transition:background 140ms ease,box-shadow 140ms ease}
 .drag-ghost{left:0;top:0;will-change:transform;box-shadow:0 12px 32px #0003;border-color:var(--accent);opacity:.98}
+.drag-ghost.replace{border-color:var(--warn)}
+.drag-ghost.replace::after{content:'Отпустите для замены';display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--warn)}
 .toast{transition:opacity 160ms ease,transform var(--move-ms) var(--ease-ui);transform:translate(-50%,6px)}
 .toast.on{transform:translate(-50%,0)}
 .toast-action{transition:background var(--press-ms) ease}
@@ -645,7 +647,7 @@ nav.tabs button:active svg{transform:scale(.9)}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-25.6';
+const APP_VERSION = '2026-11-25.7';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
@@ -1487,15 +1489,38 @@ function slotMovePlan(w, fromI, fromT, toI, toT){
   return occupied && String(occupied).trim() ? {state:'occupied', value, occupied} : {state:'ready', value};
 }
 function moveEntry(key, fromI, fromT, toI, toT){
-  const w = S.weeks[key], plan = slotMovePlan(w, fromI, fromT, toI, toT);
-  if (plan.state === 'same') return;
-  if (plan.state === 'occupied'){ toast('Это время уже занято — запись не перенесена'); return; }
-  if (plan.state !== 'ready') return;
-  snapshot('Перенос записи «' + plan.value + '»');
-  delete w.d[fromI][fromT]; (w.d[toI] || (w.d[toI] = {}))[toT] = plan.value;
-  tidyWeek(key); dirty(); save(); renderWeek();
-  enterMotion($('.cell[data-i="'+toI+'"][data-t="'+toT+'"]'));
-  toast(`Перенесено: ${fromT} → ${toT}`, {label:'Отменить', fn:undoLast});
+  const plan = slotMovePlan(S.weeks[key], fromI, fromT, toI, toT);
+  if (plan.state !== 'ready' && plan.state !== 'occupied') return;
+  const replace=plan.state==='occupied';
+  const undoReplacement=()=>{
+    const w=S.weeks[key], source=w && w.d[fromI] && w.d[fromI][fromT], target=w && w.d[toI] && w.d[toI][toT];
+    if ((source && String(source).trim()) || target!==plan.value){ toast('Записи уже изменились. Автоматическая отмена остановлена, чтобы их не перезаписать.'); return; }
+    snapshot('Отмена замены записи');
+    (w.d[fromI] || (w.d[fromI]={}))[fromT]=plan.value;
+    w.d[toI][toT]=plan.occupied;
+    tidyWeek(key); dirty(); save(); rerenderAfterDayChange(); toast('Замена отменена — обе записи восстановлены');
+  };
+  const commit=()=>{
+    const current=slotMovePlan(S.weeks[key],fromI,fromT,toI,toT);
+    if (current.state!==plan.state || current.value!==plan.value || current.occupied!==plan.occupied){ toast('Расписание изменилось. Повторите перенос и проверьте записи.'); return; }
+    const w=S.weeks[key];
+    snapshot((replace?'Замена записи на «':'Перенос записи «')+plan.value+'»');
+    delete w.d[fromI][fromT]; (w.d[toI] || (w.d[toI]={}))[toT]=plan.value;
+    tidyWeek(key); dirty(); save(); rerenderAfterDayChange();
+    if (V.view==='week' && V.week===key) enterMotion($('.cell[data-i="'+toI+'"][data-t="'+toT+'"]'));
+    toast(replace ? `Заменено: ${DAY[toI]} ${toT}` : `Перенесено: ${fromT} → ${toT}`, {label:'Отменить',fn:replace?undoReplacement:undoLast});
+  };
+  if (!replace){ commit(); return; }
+  const m=modal(`${mhead('Заменить занятие?')}
+    <p class="small muted">В выбранном слоте уже есть запись. Проверьте замену:</p>
+    <div class="transfer-preview">
+      <div class="transfer-row"><span class="small muted">Переносим · ${esc(dayTitle(key,fromI))} · ${fromT}</span><b>${esc(plan.value)}</b></div>
+      <div class="transfer-row conflict"><span class="small muted">Заменяем · ${esc(dayTitle(key,toI))} · ${toT}</span><b>${esc(plan.occupied)}</b></div>
+    </div>
+    <p class="small">Запись «${esc(plan.value)}» займёт выбранное время, исходный слот освободится. Замену можно отменить.</p>
+    <div class="row" style="justify-content:flex-end"><button class="btn ghost" data-x>Отмена</button><button class="btn pri" id="moveReplace">Заменить</button></div>`,480,{sheet:true,title:'Подтверждение замены занятия'});
+  let confirmed=false;
+  $('#moveReplace',m.el).onclick=()=>{ if(confirmed || !m.el.isConnected)return; confirmed=true; m.close(); commit(); };
 }
 function dragScrollDelta(y, height, elapsed){
   const edge=DRAG_CFG.edgePx, speed=DRAG_CFG.scrollSpeed;
@@ -1503,7 +1528,7 @@ function dragScrollDelta(y, height, elapsed){
   return strength*speed*Math.min(32,Math.max(0,elapsed))/1000;
 }
 function bindTimeMove(inp, key){
-  const row=inp.closest('.swr'); let st={phase:'idle'};
+  const row=inp.closest('.swr'); let st={phase:'idle'}, suppressClick=false;
   const clearTarget=()=>{
     if (st.hit) st.hit.classList.remove('move-target','move-blocked');
     st.hit=null; st.hitClass=null; st.target=null;
@@ -1530,13 +1555,14 @@ function bindTimeMove(inp, key){
     if (cell && cell!==inp && cell.dataset.t){
       const plan=slotMovePlan(w,+inp.dataset.i,inp.dataset.t,+cell.dataset.i,cell.dataset.t);
       if (plan.state==='ready'){ target=cell; cls='move-target'; }
-      else if (plan.state==='occupied') cls='move-blocked';
+      else if (plan.state==='occupied'){ target=cell; cls='move-blocked'; }
     }
     if (cell!==st.hit || cls!==st.hitClass){
       clearTarget();
       if (cls){ cell.classList.add(cls); st.hit=cell; st.hitClass=cls; }
     }
     st.target=target;
+    if (st.ghost) st.ghost.classList.toggle('replace',cls==='move-blocked');
   };
   const schedule=()=>{ if (st.frame==null) st.frame=requestAnimationFrame(paint); };
   const paint=time=>{
@@ -1550,7 +1576,7 @@ function bindTimeMove(inp, key){
   };
   const activate=()=>{
     if (st.phase!=='pending') return;
-    st.phase='dragging'; row._dragActive=true; inp.blur(); inp.classList.add('move-src');
+    st.phase='dragging'; suppressClick=true; row._dragActive=true; inp.blur(); inp.classList.add('move-src');
     row.classList.remove('drag-pending'); document.body.classList.add('schedule-dragging');
     const ghost=document.createElement('div'); ghost.className='drag-ghost'; ghost.textContent=inp.value;
     ghost.setAttribute('aria-hidden','true'); document.body.appendChild(ghost); st.ghost=ghost;
@@ -1559,9 +1585,11 @@ function bindTimeMove(inp, key){
     updateTarget(st.px,st.py); schedule();
   };
   inp.addEventListener('contextmenu',e=>{if(inp.hasAttribute('data-filled'))e.preventDefault()});
+  inp.addEventListener('click',e=>{if(suppressClick){suppressClick=false;e.preventDefault();e.stopImmediatePropagation();}},{capture:true});
   inp.addEventListener('selectstart',e=>{if(st.phase==='pending'||st.phase==='dragging')e.preventDefault()});
   inp.addEventListener('pointerdown',e=>{
     if ((e.button!=null && e.button!==0) || e.isPrimary===false || !inp.value.trim() || e.target!==inp) return;
+    suppressClick=false;
     if (cancelTimeGesture) cancelTimeGesture();
     finish(); cancelTimeGesture=finish; row.classList.add('drag-pending');
     st={phase:'pending',id:e.pointerId,x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,lastY:e.clientY,frame:null,lastFrame:null};
@@ -1586,6 +1614,7 @@ function bindTimeMove(inp, key){
   inp.addEventListener('pointerup',e=>{
     if (e.pointerId!==st.id) return;
     if (st.phase!=='dragging'){ finish('cancelled'); return; }
+    if (e.cancelable) e.preventDefault();
     updateTarget(e.clientX,e.clientY);
     st.phase='dropping';
     const target=st.target, fromI=+inp.dataset.i, fromT=inp.dataset.t, toI=target && +target.dataset.i, toT=target && target.dataset.t;
