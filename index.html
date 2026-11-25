@@ -582,6 +582,10 @@ nav.tabs button:active svg{transform:scale(.9)}
 .daytabs button{min-height:44px;min-width:44px;flex:1 0 44px}
 .tools{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tools button{min-width:0}
+@media (hover:hover) and (pointer:fine){
+  .daylist .rdx.on{display:flex;margin-right:4px;visibility:hidden}
+  .daylist .r:hover .rdx.on,.daylist .r:focus-within .rdx.on{visibility:visible}
+}
 @media (max-width:360px){
   .tools button{font-size:12px;padding:7px 2px}
   .tools button:not(.sat-toggle) svg{display:none}
@@ -641,7 +645,7 @@ nav.tabs button:active svg{transform:scale(.9)}
 <script>
 "use strict";
 const APP_SRC = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
-const APP_VERSION = '2026-11-25.5';
+const APP_VERSION = '2026-11-25.6';
 /* ============ constants & utils ============ */
 const KEY = 'kirill-schedule-app-v1';
 const DAY = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
