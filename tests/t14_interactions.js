@@ -24,7 +24,7 @@ const context = {
   Uint8Array, ArrayBuffer, TextDecoder, TextEncoder, Blob:class {}, URL:{createObjectURL(){return '';},revokeObjectURL(){}}
 };
 context.window = context;
-vm.runInNewContext(script + '\nglobalThis.__appTest={parseEntry,compile,dayFormula,calcWeek,slotMovePlan,ghFetch,kidMovePlan,openKidMove,openSend,openKid,renderWeek,V,setState:x=>{S=x;dirty();}};', context, {filename:'index.html'});
+vm.runInNewContext(script + '\nglobalThis.__appTest={toast,nextSessionIndex,updateHomeClock,parseEntry,compile,dayFormula,calcWeek,slotMovePlan,ghFetch,kidMovePlan,openKidMove,openSend,openKid,renderWeek,V,setState:x=>{S=x;dirty();}};', context, {filename:'index.html'});
 const app = context.__appTest;
 
 let passed = 0;
@@ -78,7 +78,7 @@ test('выбор одного или двух дней сохраняет исх
 const nodes = new Map();
 const node = key => {
   if (!nodes.has(key)) {
-    const n = {innerHTML:'',value:'',style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},addEventListener(){},removeEventListener(){},appendChild(){},remove(){},focus(){},closest(){return null;},querySelector:node,querySelectorAll(){return [];}};
+    const n = {innerHTML:'',value:'',style:{},dataset:{},classList:{add(){},remove(){},toggle(){}},events:{},attributes:{},setAttribute(k,v){this.attributes[k]=v;},getAttribute(k){return this.attributes[k];},contains(){return false;},addEventListener(k,fn){this.events[k]=fn;},removeEventListener(){},appendChild(){},remove(){},focus(){},closest(){return null;},querySelector:node,querySelectorAll(){return [];}};
     n.querySelectorAll = selector => selector==='[data-kmday]' ? [...node('#kmBox').innerHTML.matchAll(/data-kmday="(\d+)"\s*(checked)?/g)].map(m=>{const cb=node('day'+m[1]);cb.dataset.kmday=m[1];cb.checked=!!m[2];return cb;}) : [];
     n.firstElementChild=n; nodes.set(key,n);
   }
@@ -94,10 +94,13 @@ test('отправка предлагает детей только выбран
   node('#sNext').onclick(); assert.equal(node('#sCp').disabled,true); assert.ok(node('#sOpts').innerHTML.includes('занятий нет'));
 });
 test('в карточке действия выше одинаково оформленных счётчиков', () => {
+  document.body.style.overflow='auto';
   app.setState(fixture()); app.openKid('аня','2026-11-23');
   const h=node('dialog').innerHTML;
   assert.ok(h.indexOf('id="kActions"')<h.indexOf('class="kstats"')); assert.ok(h.indexOf('class="kstats"')<h.indexOf('id="kProf"'));
   assert.ok(node('#kActions').innerHTML.includes('id="kMove"')); assert.ok(node('#kActions').innerHTML.includes('id="kSend"'));
+  assert.ok(node('dialog').className.includes('kid-sheet')); assert.equal(document.body.style.overflow,'hidden');
+  node('dialog').events.click({target:{closest:()=>true}}); assert.equal(document.body.style.overflow,'auto');
 });
 test('суббота сворачивается на телефоне без удаления записей', () => {
   const s=fixture(); app.setState(s); Object.assign(app.V,{view:'week',week:'2026-11-23',day:0,satOpen:false});
@@ -122,6 +125,34 @@ test('снятие галочки переносит только выбранн
   assert.equal(s.weeks['2026-11-30'].d[4]['11:00'],'Аня');
   assert.ok(!s.weeks['2026-11-30'].d[2]); assert.equal(s.weeks['2026-11-23'].d[2]['10:00'],'Аня');
   const restored=JSON.parse(saved.get('kirill-schedule-app-v1')); assert.equal(restored.weeks['2026-11-30'].d[4]['11:00'],'Аня');
+});
+test('предпросмотр показывает исходную запись и сохраняет занятой слот до подтверждения', () => {
+  const s=fixture(), before=JSON.stringify(s); app.setState(s); app.openKidMove('аня','2026-11-23');
+  const h=node('#kmBox').innerHTML;
+  assert.ok(h.includes('Сейчас · Пн')); assert.ok(h.includes('Следующая неделя')); assert.ok(h.includes('Занято — оставляем Вера'));
+  assert.equal(JSON.stringify(s),before);
+});
+test('линия времени выбирает ближайшее занятие на границах времени', () => {
+  assert.equal(app.nextSessionIndex(['09:00','10:00','11:00'],'08:59'),0);
+  assert.equal(app.nextSessionIndex(['09:00','10:00','11:00'],'10:00'),1);
+  assert.equal(app.nextSessionIndex(['09:00','10:00','11:00'],'10:01'),2);
+  assert.equal(app.nextSessionIndex(['09:00','10:00','11:00'],'11:01'),-1);
+  assert.equal(app.nextSessionIndex([],'10:00'),-1);
+});
+test('линия Сейчас перемещается к следующей записи и скрывается на другом дне', () => {
+  const RealDate=context.Date;
+  context.Date=class extends Date {constructor(...args){super(...(args.length?args:['2026-11-25T10:30:00']));}};
+  const list=node('.hlist[data-date]'), marker=node('#homeNow'); list.dataset.date='2026-11-25';
+  const rows=['09:00','11:00'].map(time=>({dataset:{time},classList:{toggle(c,v){this.selected=v;},remove(){this.selected=false;}}}));
+  list.querySelectorAll=()=>rows; list.insertBefore=(el,ref)=>{list.markerBefore=ref;};
+  app.updateHomeClock(); assert.equal(marker.hidden,false); assert.ok(marker.textContent.includes('10:30')); assert.equal(list.markerBefore,rows[1]); assert.equal(rows[1].classList.selected,true);
+  list.dataset.date='2026-11-26'; app.updateHomeClock(); assert.equal(marker.hidden,true); assert.equal(rows[1].classList.selected,false);
+  context.Date=RealDate;
+});
+test('отмена доступна отдельной кнопкой и срабатывает только один раз', () => {
+  let count=0; app.toast('Перенесено: 1',{label:'Отменить',fn:()=>count++});
+  assert.ok(node('#toast').innerHTML.includes('<button')); assert.equal(node('#toast').onclick,null);
+  const undo=node('.toast-action'); undo.onclick(); undo.onclick(); assert.equal(count,1);
 });
 
 (async () => {
