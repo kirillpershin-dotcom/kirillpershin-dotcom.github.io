@@ -6,6 +6,8 @@ const VERSION = '2026-11-25.7';
 const PREFIX = 'raspisanie-';            // все кэши этого приложения начинаются так; чужие кэши не трогаем
 const CACHE = PREFIX + VERSION;
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
+// Не перехватываем страницы и файлы других приложений GitHub Pages.
+const APP_PATHS = new Set([...FILES, './version.json'].map(file => new URL(file, self.registration.scope).pathname));
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE);
@@ -25,7 +27,7 @@ const isOlder = k => k !== CACHE && /^raspisanie-(v\d+|\d{4}-\d{2}-\d{2}\.\d+)$/
 const cleanup = async () => { for (const k of await caches.keys()) if (isOlder(k)) await caches.delete(k); };
 self.addEventListener('activate', e => { e.waitUntil((async () => { await cleanup(); await self.clients.claim(); setTimeout(() => cleanup().catch(() => {}), 3000); })()); });
 self.addEventListener('fetch', e => {
-  const req = e.request; if (req.method !== 'GET') return; const url = new URL(req.url); if (url.origin !== location.origin) return;
+  const req = e.request; if (req.method !== 'GET') return; const url = new URL(req.url); if (url.origin !== location.origin || !APP_PATHS.has(url.pathname)) return;
   if (url.pathname.endsWith('/version.json')){ e.respondWith(fetch(req, {cache: 'no-store'}).then(r => { const hd = new Headers(r.headers); hd.set('X-App-SW', VERSION); return new Response(r.body, {status:r.status,statusText:r.statusText,headers:hd}); })); return; }
   const isPage = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
   e.respondWith((async () => { const c = await caches.open(CACHE); const hit = isPage ? await c.match('./index.html') : await c.match(req,{ignoreSearch:true}); if (isPage) cleanup().catch(()=>{}); if(hit)return hit; const res=await fetch(req); if(res.ok&&!isPage)c.put(req,res.clone()); return res; })());
